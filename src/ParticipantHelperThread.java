@@ -5,12 +5,12 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.UUID;
 
-public class ParticpantHelperThread extends Thread{
+public class ParticipantHelperThread extends Thread{
     private MonitorDataPaPaHeThread monitorDataPaPaHeThread;
     private DatagramSocket socket;
     private WriteLogFile writeLogFile;
 
-    public ParticpantHelperThread(MonitorDataPaPaHeThread monitorDataPaPaHeThread, DatagramSocket socket,WriteLogFile writeLogFile){
+    public ParticipantHelperThread(MonitorDataPaPaHeThread monitorDataPaPaHeThread, DatagramSocket socket, WriteLogFile writeLogFile){
         this.monitorDataPaPaHeThread = monitorDataPaPaHeThread;
         this.socket = socket;
         this.writeLogFile = writeLogFile;

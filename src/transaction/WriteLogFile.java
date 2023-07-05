@@ -26,6 +26,15 @@ public class WriteLogFile {
             e.printStackTrace();
         }
     }
+
+    public synchronized void writeToFileParticipant(TransactionParticipant transaction) {
+        try (FileWriter fileWriter = new FileWriter( this.logFile, true)) {
+            fileWriter.write(transaction.getUUID() + " " + transaction.getStateP());
+            fileWriter.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
     public synchronized void writeToFileFinalResult(TransactionCoordinator transaction,String finalResult) {
         try (FileWriter fileWriter = new FileWriter( this.logFile, true)) {
             fileWriter.write(transaction.getUUID() + " " + transaction.getStateC() + " " + transaction.clientReference.getClientAddress() + " " + transaction.clientReference.getClientPort()+ " finalResult:"+finalResult);

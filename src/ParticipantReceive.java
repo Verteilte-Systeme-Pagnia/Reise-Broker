@@ -6,8 +6,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 public class ParticipantReceive {
@@ -39,7 +37,7 @@ public class ParticipantReceive {
         try{
             socket = new DatagramSocket(Config.Participant1Port);
 
-            Thread participantHelperThread = new ParticpantHelperThread(participantReceive1.monitorDataPaPaHeThread, socket,participantReceive1.writeLogFileMonitor);
+            Thread participantHelperThread = new ParticipantHelperThread(participantReceive1.monitorDataPaPaHeThread, socket,participantReceive1.writeLogFileMonitor);
             participantHelperThread.start();
 
             while(true) {
@@ -64,7 +62,7 @@ public class ParticipantReceive {
                         participantReceive1.monitorDataPaPaThread.getTransaction(UUID.fromString(splitMSG[0])).setDatagramPacket(receiveDP);
                     }
                 }else if(participantReceive1.participantRefs.stream().anyMatch(participantRef -> participantRef.getAddress().equals(receiveDP.getAddress()) && participantRef.getPort() == receiveDP.getPort())){
-                    //gib dies dem participanthelper thread dieser schkickt nachricht an den nachfrager thread
+                    //gib dies dem participanthelper thread dieser schickt nachricht an den nachfrager thread
                     String[] splitMSG = msg.split(" ");//Aufbau von Partizipanten: UUID MSG ...
                     while(participantReceive1.monitorDataPaPaHeThread.getDatagramPacketRequestingParticipant() != null){
                         //warte bis Paket von Thread entnommen wurde

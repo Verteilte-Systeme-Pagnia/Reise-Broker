@@ -1,5 +1,7 @@
 import transaction.TransactionCoordinator;
 import transaction.TransactionParticipant;
+import transaction.states_coordinator;
+import transaction.states_participant;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,5 +20,9 @@ public class MonitorDataPaPaThread { //Daten zwischen partizipant receive und pa
     
     public TransactionParticipant getTransaction(UUID uuid){
         return this.uuidTransactionParticipantMap.get(uuid);
+    }
+
+    public synchronized void setTransactionStatus(UUID uuid, states_participant stateP){
+        this.uuidTransactionParticipantMap.get(uuid).setStateP(stateP);
     }
 }
