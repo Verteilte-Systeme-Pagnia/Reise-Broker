@@ -1,13 +1,13 @@
-// Package not detected, please report project structure on CodeTogether's GitHub Issues
+package logic;// Package not detected, please report project structure on CodeTogether's GitHub Issues
 
 
-import transaction.*;
+import logic.transaction.*;
 
 import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import static transaction.states_coordinator.Finish;
+import static logic.transaction.states_coordinator.*;
 
 
 public class CoordinatorThread extends Thread{

@@ -1,7 +1,7 @@
-import transaction.TransactionCoordinator;
-import transaction.TransactionParticipant;
-import transaction.states_coordinator;
-import transaction.states_participant;
+package logic;
+
+import logic.transaction.TransactionParticipant;
+import logic.transaction.states_participant;
 
 import java.util.HashMap;
 import java.util.Map;

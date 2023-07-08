@@ -1,11 +1,10 @@
+package logic;
 
-import transaction.*;
+import logic.transaction.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
-
-import static transaction.states_coordinator.Finish;
 
 public class ParticipantThread extends Thread {
     private static final String LOCAL_LOG_FILE = "protokolldatei.txt";

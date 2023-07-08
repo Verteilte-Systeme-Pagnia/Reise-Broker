@@ -1,7 +1,9 @@
+package logic;
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import transaction.*;
+import logic.transaction.*;
 
 public class CoordinatorReceive {
     private MonitorDataCoCoThread monitorDataCoCoThread;

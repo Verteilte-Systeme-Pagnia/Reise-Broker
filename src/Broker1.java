@@ -1,3 +1,7 @@
+import logic.Config;
+import logic.CoordinatorReceive;
+import logic.ParticipantRef;
+
 import java.net.*;
 import java.util.*;
 

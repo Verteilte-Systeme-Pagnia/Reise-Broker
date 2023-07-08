@@ -1,3 +1,8 @@
+import logic.Config;
+import logic.CoordinatorRef;
+import logic.ParticipantReceive;
+import logic.ParticipantRef;
+
 import java.net.*;
 import java.util.*;
 public class Hotel {
@@ -6,7 +11,7 @@ public class Hotel {
         try{
             ArrayList<CoordinatorRef> coordinatorRefs = new ArrayList<>();
 
-            coordinatorRefs.add(new CoordinatorRef(InetAddress.getByName("localhost"),Config.Coordinator1Port));
+            coordinatorRefs.add(new CoordinatorRef(InetAddress.getByName("localhost"), Config.Coordinator1Port));
             coordinatorRefs.add(new CoordinatorRef(InetAddress.getByName("localhost"),Config.Coordinator2Port));
 
             ArrayList<ParticipantRef> participantRefs = new ArrayList<>();

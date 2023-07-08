@@ -1,5 +1,7 @@
+package logic;
+
 import java.net.InetAddress;
-import transaction.states_coordinator;
+import logic.transaction.states_coordinator;
 
 public class CoordinatorRef {
     private InetAddress address;

@@ -1,5 +1,5 @@
-// Package not detected, please report project structure on CodeTogether's GitHub Issues
-import transaction.states_participant;
+package logic;// Package not detected, please report project structure on CodeTogether's GitHub Issues
+import logic.transaction.states_participant;
 
 import java.net.*;
 

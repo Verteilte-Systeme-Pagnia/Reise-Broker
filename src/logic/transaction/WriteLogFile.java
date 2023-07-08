@@ -1,4 +1,4 @@
-package transaction;
+package logic.transaction;
 
 import java.io.*;
 import java.net.DatagramPacket;

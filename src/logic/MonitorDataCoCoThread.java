@@ -1,6 +1,7 @@
-import transaction.*;
+package logic;
 
-import java.net.DatagramPacket;
+import logic.transaction.*;
+
 import java.util.*;
 public class MonitorDataCoCoThread{
     private Map<UUID, TransactionCoordinator> uuidTransactionCoordinatorMap;

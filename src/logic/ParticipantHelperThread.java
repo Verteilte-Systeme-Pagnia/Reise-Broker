@@ -1,4 +1,7 @@
-import transaction.WriteLogFile;
+package logic;
+
+import logic.MonitorDataPaPaHeThread;
+import logic.transaction.WriteLogFile;
 
 import java.io.IOException;
 import java.net.DatagramPacket;

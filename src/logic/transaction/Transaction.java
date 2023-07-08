@@ -1,5 +1,5 @@
 // Package not detected, please report project structure on CodeTogether's GitHub Issues
-package transaction;
+package logic.transaction;
 import java.net.DatagramPacket;
 import java.util.*;
 public class Transaction {

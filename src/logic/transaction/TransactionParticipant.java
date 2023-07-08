@@ -1,6 +1,4 @@
-package transaction;
-
-import transaction.Transaction;
+package logic.transaction;
 
 public class TransactionParticipant extends Transaction {
     private states_participant stateP;

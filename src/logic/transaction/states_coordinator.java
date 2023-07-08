@@ -1,4 +1,4 @@
-package transaction;
+package logic.transaction;
 
 public enum states_coordinator {
     INIT,

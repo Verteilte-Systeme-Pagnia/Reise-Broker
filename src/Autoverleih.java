@@ -1,3 +1,8 @@
+import logic.Config;
+import logic.CoordinatorRef;
+import logic.ParticipantReceive;
+import logic.ParticipantRef;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -8,7 +13,7 @@ public class Autoverleih {
         try{
             ArrayList<CoordinatorRef> coordinatorRefs = new ArrayList<>();
 
-            coordinatorRefs.add(new CoordinatorRef(InetAddress.getByName("localhost"),Config.Coordinator1Port));
+            coordinatorRefs.add(new CoordinatorRef(InetAddress.getByName("localhost"), Config.Coordinator1Port));
             coordinatorRefs.add(new CoordinatorRef(InetAddress.getByName("localhost"),Config.Coordinator2Port));
 
             ArrayList<ParticipantRef> participantRefs = new ArrayList<>();

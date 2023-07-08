@@ -1,4 +1,6 @@
-import transaction.*;
+package logic;
+
+import logic.transaction.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,7 +28,7 @@ public class ParticipantReceive {
             socket = new DatagramSocket(socketPort);
 
             Scanner scanner = new Scanner(new File(this.filename));
-            System.out.println("ParticipantReceive Sanner wurde erzeugt");
+            System.out.println("logic.ParticipantReceive Sanner wurde erzeugt");
             while(scanner.hasNext()) {
                 String[] line = scanner.nextLine().split(" ");
                 if(this.monitorDataPaPaThread.getTransaction(UUID.fromString(line[0])) == null){
@@ -49,7 +51,7 @@ public class ParticipantReceive {
                     }
 
                 }            }
-            System.out.println("ParticipantReceive holt sich als nächstes map");
+            System.out.println("logic.ParticipantReceive holt sich als nächstes map");
 
             for (Map.Entry<UUID, TransactionParticipant> entry : this.monitorDataPaPaThread.getUuidTransactionParticipantMap().entrySet()) {
                 UUID key = entry.getKey();
@@ -60,16 +62,16 @@ public class ParticipantReceive {
 
             Thread participantHelperThread = new ParticipantHelperThread(this.monitorDataPaPaHeThread, socket,this.writeLogFileMonitor);
             participantHelperThread.start();
-            System.out.println("ParticipantReceive startet ParticipantHelperThread");
+            System.out.println("logic.ParticipantReceive startet logic.ParticipantHelperThread");
             while(true) {
                 byte buffer[] = new byte[65507];
                 DatagramPacket receiveDP = new DatagramPacket(buffer,buffer.length);
                 socket.receive(receiveDP);
-                System.out.println("ParticipantReceive hat paket empfangen");
+                System.out.println("logic.ParticipantReceive hat paket empfangen");
 
                 String msg = new String(receiveDP.getData(),0,receiveDP.getLength()); //Aufbau von Koordinator: UUID MSG ... /Aufbau von anderem Partizipanten:
                 //if -> from coordinator else if -> from other participant -> from a Client also ignore
-                System.out.println("ParticipantReceive "+msg);
+                System.out.println("logic.ParticipantReceive "+msg);
                 if (this.coordinatorRefs.stream().anyMatch(coordinatorRef -> coordinatorRef.getAddress().equals(receiveDP.getAddress()) && coordinatorRef.getPort() == receiveDP.getPort())){
                     String[] splitMSG = msg.split(" ");//Aufbau von Koordinator: UUID MSG ...
                     if(this.monitorDataPaPaThread.getTransaction(UUID.fromString(splitMSG[0])) == null){//nicht in liste bereits enthalten?
@@ -80,14 +82,14 @@ public class ParticipantReceive {
                         this.monitorDataPaPaThread.addTransaction(UUID.fromString(splitMSG[0]), transactionParticipant);
                         Thread participantThread = new ParticipantThread(UUID.fromString(splitMSG[0]),this.monitorDataPaPaThread,this.writeLogFileMonitor,socket, this.participantRefs, type );
                         participantThread.start();
-                        System.out.println("ParticipantReceive startet einen neuen Thread");
+                        System.out.println("logic.ParticipantReceive startet einen neuen Thread");
                     }else{
                         //lege neues Datagrampacket packet hinein
                         while(this.monitorDataPaPaThread.getTransaction(UUID.fromString(splitMSG[0])).getDatagramPacket() != null){
                             //warte bis Paket von Thread entnommen wurde
                         }
                         this.monitorDataPaPaThread.getTransaction(UUID.fromString(splitMSG[0])).setDatagramPacket(receiveDP);
-                        System.out.println("ParticipantReceive hat neues Datagrampacket abgelegt");
+                        System.out.println("logic.ParticipantReceive hat neues Datagrampacket abgelegt");
                     }
                 }else if(this.participantRefs.stream().anyMatch(participantRef -> participantRef.getAddress().equals(receiveDP.getAddress()) && participantRef.getPort() == receiveDP.getPort())){
                     //gib dies dem participanthelper thread dieser schickt nachricht an den nachfrager thread

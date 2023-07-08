@@ -1,4 +1,4 @@
-package transaction;
+package logic.transaction;
 
 public class TransactionCoordinator extends Transaction {
     private states_coordinator stateC;

@@ -1,4 +1,4 @@
-// Package not detected, please report project structure on CodeTogether's GitHub Issues
+package logic;// Package not detected, please report project structure on CodeTogether's GitHub Issues
 
 import java.net.InetAddress;
 
