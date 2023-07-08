@@ -58,7 +58,7 @@ public class CoordinatorReceive {
                  byte[] buffer = new byte[65507];
                  DatagramPacket receiveDP = new DatagramPacket(buffer, buffer.length);
                  socket.receive(receiveDP);
-                 System.out.println("Datagram bekommen");
+                 System.out.println("DatagramPacket bekommen");
 
                  if(participants.stream().anyMatch(participantRef -> participantRef.getAddress().equals(receiveDP.getAddress()) && participantRef.getPort() == receiveDP.getPort())){//Nachricht von Partizipanten
                      //ändere von uuid in coordinator list auf den zustand des partizipanten das thread ausführen kann

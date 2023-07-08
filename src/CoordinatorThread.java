@@ -72,7 +72,7 @@ public class CoordinatorThread extends Thread{
             .forEach(participantRef -> sendMsgParticipant(this.uuid.toString() + " VOTE_REQUEST",participantRef));
         // Warte auf eingehende Stimmen
         long startTime = System.nanoTime();
-        long endTime = startTime + (5 * 1000000000L); // 5 Sekunden in Nanosekunden umrechnen
+        long endTime = startTime + (15 * 1000000000L); // 15 Sekunden in Nanosekunden umrechnen
         boolean allReceived = false;
         for(ParticipantRef participantRef : participantsSingleThread){
             participantRef.setStateP(states_participant.INIT);
@@ -83,6 +83,7 @@ public class CoordinatorThread extends Thread{
             if(tempDatagramPacket == null){
                 //nichts Neues angekommen
             }else{
+                System.out.println("ich habe kein null datapcket bekommen in wait():");
                 this.monitorDataCoCoThread.getTransaction(uuid).setDatagramPacket(null);
                 String msg[] = new String(tempDatagramPacket.getData(), 0, tempDatagramPacket.getLength()).split(" "); //msg UUID Command Content
                 participantsSingleThread.stream()
@@ -97,13 +98,21 @@ public class CoordinatorThread extends Thread{
                 allReceived = participantsSingleThread.stream().allMatch(participantRef -> participantRef.getStateP() != states_participant.INIT); //prüfe ob alle etwas empfangen haben und einen status gesetzt haben
             }
         }
+
+            System.out.println("Evaluiere wait ob commit oder abbort: "+ (allReceived && (participantsSingleThread.stream().allMatch(participantRef -> participantRef.getStateP().equals(states_participant.COMMIT)))));
+            System.out.println("Evaluiere wait ob commit oder abbort allreceived: "+allReceived);
+            System.out.println("Evaluiere wait ob commit oder abbort allreceived: "+ participantsSingleThread.stream().allMatch(participantRef -> participantRef.getStateP().equals(states_participant.COMMIT)));
+
             if(allReceived && (participantsSingleThread.stream().allMatch(participantRef -> participantRef.getStateP().equals(states_participant.COMMIT)))){
-                monitorDataCoCoThread.setTransactionStatus(this.uuid, states_coordinator.COMMIT);
-                writeLogFileMonitor.writeToFile(monitorDataCoCoThread.getTransaction(this.uuid));
+                this.monitorDataCoCoThread.setTransactionStatus(this.uuid, states_coordinator.COMMIT);
+                System.out.println("Setze mich auf Commit");
+
+                this.writeLogFileMonitor.writeToFile(monitorDataCoCoThread.getTransaction(this.uuid));
 
             } else{
-                monitorDataCoCoThread.setTransactionStatus(this.uuid, states_coordinator.ABORT);
-                writeLogFileMonitor.writeToFile(monitorDataCoCoThread.getTransaction(this.uuid));
+                this.monitorDataCoCoThread.setTransactionStatus(this.uuid, states_coordinator.ABORT);
+                System.out.println("Setze mich auf Abort");
+                this.writeLogFileMonitor.writeToFile(monitorDataCoCoThread.getTransaction(this.uuid));
 
             }
     }

@@ -59,10 +59,11 @@ public class ParticipantThread extends Thread {
         boolean vote_request = false;
         while (System.nanoTime() < endTime && !vote_request) {
             DatagramPacket tempDatagramPacket = this.monitorDataPaPaThread.getTransaction(uuid).getDatagramPacket();
-            tempDP = tempDatagramPacket;
             if (tempDatagramPacket == null) {
                 //nichts Neues angekommen
             } else {
+                tempDP = new DatagramPacket(tempDatagramPacket.getData(),tempDatagramPacket.getLength(),tempDatagramPacket.getAddress(),tempDatagramPacket.getPort());
+
                 this.monitorDataPaPaThread.getTransaction(uuid).setDatagramPacket(null);
                 System.out.print(tempDP.getAddress());
                 String msg[] = new String(tempDatagramPacket.getData(), 0, tempDatagramPacket.getLength()).split(" ");
