@@ -7,7 +7,7 @@ public class Client {
         try {
             socket = new DatagramSocket(Config.ClientPort);
             byte[] msg = "Hotelzimmer:1a VW-5678".getBytes();
-            DatagramPacket sendDP = new DatagramPacket(msg,msg.length,0,Config.Coordinator1Address,Config.Coordinator1Port);
+            DatagramPacket sendDP = new DatagramPacket(msg,msg.length,0,InetAddress.getByName("localhost"),Config.Coordinator1Port);
             socket.send(sendDP);
 
             byte[] puffer = new byte[65507];

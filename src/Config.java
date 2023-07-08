@@ -2,23 +2,24 @@
 
 import java.net.InetAddress;
 
-public class Config {
+public abstract class Config {
     public final static int Coordinator1Port = 5000;
-    public final static InetAddress Coordinator1Address;
+    public  static InetAddress Coordinator1Address;
 
     public final static int Coordinator2Port = 5001;
-    public final static InetAddress Coordinator2Address;
+    public  static InetAddress Coordinator2Address;
 
     public final static int Participant1Port = 4998;
-    public final static InetAddress Participant1Address;
+    public  static InetAddress Participant1Address;
 
     public final static int Participant2Port = 4999;
-    public final static InetAddress Participant2Address;
+    public  static InetAddress Participant2Address;
 
     public final static int ClientPort = 5002;
-    public final static InetAddress ClientAddress;
+    public  static InetAddress ClientAddress;
 
-     static {
+     public static void main(String[] args){
+         
             InetAddress localhost = null;
             try {
                 localhost = InetAddress.getLocalHost();
@@ -30,6 +31,7 @@ public class Config {
             Participant1Address = localhost;
             Participant2Address = localhost;
             ClientAddress = localhost;
-        }
+
+     }
 
 }

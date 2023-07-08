@@ -25,4 +25,8 @@ public class MonitorDataPaPaThread { //Daten zwischen partizipant receive und pa
     public synchronized void setTransactionStatus(UUID uuid, states_participant stateP){
         this.uuidTransactionParticipantMap.get(uuid).setStateP(stateP);
     }
+
+    public synchronized Map<UUID, TransactionParticipant> getUuidTransactionParticipantMap(){
+        return this.uuidTransactionParticipantMap;
+    }
 }

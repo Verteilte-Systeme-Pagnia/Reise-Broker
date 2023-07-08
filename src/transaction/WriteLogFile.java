@@ -20,7 +20,7 @@ public class WriteLogFile {
 
     public synchronized void writeToFile(TransactionCoordinator transaction) {
         try (FileWriter fileWriter = new FileWriter( this.logFile, true)) {
-            fileWriter.write(transaction.getUUID() + " " + transaction.getStateC() + " " + transaction.clientReference.getClientAddress() + " " + transaction.clientReference.getClientPort());
+            fileWriter.write(transaction.getUUID() + " " + transaction.getStateC() + " " + transaction.clientReference.getClientAddress() + " " + transaction.clientReference.getClientPort() + "\n");
             fileWriter.flush();
         } catch (IOException e) {
             e.printStackTrace();
@@ -29,7 +29,7 @@ public class WriteLogFile {
 
     public synchronized void writeToFileParticipant(TransactionParticipant transaction) {
         try (FileWriter fileWriter = new FileWriter( this.logFile, true)) {
-            fileWriter.write(transaction.getUUID() + " " + transaction.getStateP());
+            fileWriter.write(transaction.getUUID() + " " + transaction.getStateP() + "\n");
             fileWriter.flush();
         } catch (IOException e) {
             e.printStackTrace();
@@ -51,7 +51,9 @@ public class WriteLogFile {
             while ((line = bufferedReader.readLine()) != null) {
                 String tempLine[] = line.split(" ");
                 if(tempLine[0].equals(uuid.toString())){
-                    lastRecordedState = line;
+                    if(!tempLine[1].equals("ACK")){
+                        lastRecordedState = line;
+                    }
                 }
             }
             return lastRecordedState;

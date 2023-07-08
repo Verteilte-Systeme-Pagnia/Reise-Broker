@@ -15,24 +15,26 @@ public class CoordinatorReceive {
         this.monitorDataCoCoThread = new MonitorDataCoCoThread();
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws UnknownHostException {
         // Beispielverwendung der Klasse TwoPhaseCommitProtocol
         ArrayList<ParticipantRef> participants = new ArrayList<ParticipantRef>();
 
-        ParticipantRef participantRef1 = new ParticipantRef(Config.Participant1Address, Config.Participant2Port);
-        ParticipantRef participantRef2 = new ParticipantRef(Config.Participant2Address,Config.Participant2Port);
+        ParticipantRef participantRef1 = new ParticipantRef(InetAddress.getByName("localhost"), Config.Participant1Port);
+        //ParticipantRef participantRef2 = new ParticipantRef(InetAddress.getByName("localhost"),Config.Participant2Port);
 
         participants.add(participantRef1);
-        participants.add(participantRef2);
+        //participants.add(participantRef2);
+
 
         CoordinatorReceive coordinatorReceive1 = new CoordinatorReceive(participants,"LogFileCoordinator1.txt");
         //LogDateinlesen
         //Threads mit transaktionen neu erzeugen und auf Stand setzen
         DatagramSocket socket = null;
+        System.out.println("Participant erstelle socket");
         try{
             socket = new DatagramSocket(Config.Coordinator1Port);
             //lese log datei aus
-            Scanner scanner = new Scanner("LogFileCoordinator1.txt");
+            Scanner scanner = new Scanner(new File("LogFileCoordinator1.txt"));
             if(scanner.hasNext()) {
                 String[] line = scanner.nextLine().split(" ");
                 if(coordinatorReceive1.monitorDataCoCoThread.getTransaction(UUID.fromString(line[0])) == null){
@@ -45,6 +47,7 @@ public class CoordinatorReceive {
                     }
                 }
             }
+            System.out.println("Hole die map");
             for (Map.Entry<UUID, TransactionCoordinator> entry : coordinatorReceive1.monitorDataCoCoThread.getUuidTransactionCoordinatorMap().entrySet()) {
                 UUID key = entry.getKey();
                 Thread coordinatorThread = new CoordinatorThread(key,coordinatorReceive1.monitorDataCoCoThread,coordinatorReceive1.writeLogFileMonitor,coordinatorReceive1.participants,socket);
@@ -52,9 +55,10 @@ public class CoordinatorReceive {
             }
 
             while(true){
-                byte[] buffer = new byte[65507];
+                 byte[] buffer = new byte[65507];
                  DatagramPacket receiveDP = new DatagramPacket(buffer, buffer.length);
                  socket.receive(receiveDP);
+                 System.out.println("Datagram bekommen");
 
                  if(participants.stream().anyMatch(participantRef -> participantRef.getAddress().equals(receiveDP.getAddress()) && participantRef.getPort() == receiveDP.getPort())){//Nachricht von Partizipanten
                      //ändere von uuid in coordinator list auf den zustand des partizipanten das thread ausführen kann
@@ -63,12 +67,14 @@ public class CoordinatorReceive {
                          //warte bis Paket von Thread entnommen wurde
                      }
                      coordinatorReceive1.monitorDataCoCoThread.getTransaction(tempUUID).setDatagramPacket(receiveDP);
-                 }else if(false){//Client
+                 }else{//Client
                      TransactionCoordinator transaction = new TransactionCoordinator(new ClientReference(receiveDP.getPort(), receiveDP.getAddress()));
+                     System.out.println("Nachricht von Client empfangen");
                      UUID tempUUID = transaction.getUUID();
                      coordinatorReceive1.monitorDataCoCoThread.addTransaction(transaction);// müssen wir über monitor noch synchronizen
                      Thread coordinatorThread = new CoordinatorThread(tempUUID, coordinatorReceive1.monitorDataCoCoThread, coordinatorReceive1.writeLogFileMonitor, coordinatorReceive1.participants, socket);
                      coordinatorThread.start();
+                     System.out.println("Thread gestartet");
                  }
             }
 

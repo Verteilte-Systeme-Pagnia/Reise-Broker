@@ -7,6 +7,8 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import static transaction.states_coordinator.Finish;
+
 
 public class CoordinatorThread extends Thread{
     private MonitorDataCoCoThread monitorDataCoCoThread;
@@ -32,21 +34,28 @@ public class CoordinatorThread extends Thread{
         initialize();
     }
 
-    private void initialize(){
-        switch (this.monitorDataCoCoThread.getTransaction(uuid).getStateC()){
-            case INIT:
-                stateInit();
-            case WAIT:
-                stateWait();
-            case ABORT:
-                sendGlobalAbort();
-                receiveAck();
-            case COMMIT:
-                sendGlobalCommit();
-                receiveAck();
-            case SENDCLIENT:
-                sendClientMessage();
-            case Finish:
+    private void initialize() {
+        while (this.monitorDataCoCoThread.getTransaction(uuid).getStateC() != Finish) {
+            switch (this.monitorDataCoCoThread.getTransaction(uuid).getStateC()) {
+                case INIT:
+                    stateInit();
+                    break;
+                case WAIT:
+                    stateWait();
+                    break;
+                case ABORT:
+                    sendGlobalAbort();
+                    receiveAck();
+                    break;
+                case COMMIT:
+                    sendGlobalCommit();
+                    receiveAck();
+                    break;
+                case SENDCLIENT:
+                    sendClientMessage();
+                    break;
+                case Finish:
+            }
         }
     }
 
@@ -66,7 +75,7 @@ public class CoordinatorThread extends Thread{
         long endTime = startTime + (5 * 1000000000L); // 5 Sekunden in Nanosekunden umrechnen
         boolean allReceived = false;
         for(ParticipantRef participantRef : participantsSingleThread){
-            participantRef.setStateP(null);
+            participantRef.setStateP(states_participant.INIT);
         }
 
         while(System.nanoTime() < endTime && (!allReceived)){
@@ -85,7 +94,7 @@ public class CoordinatorThread extends Thread{
                                 participantRef.setStateP(states_participant.ABORT);
                             }
                         });
-                allReceived = participantsSingleThread.stream().allMatch(participantRef -> participantRef.getStateP() != null); //prüfe ob alle etwas empfangen haben und einen status gesetzt haben
+                allReceived = participantsSingleThread.stream().allMatch(participantRef -> participantRef.getStateP() != states_participant.INIT); //prüfe ob alle etwas empfangen haben und einen status gesetzt haben
             }
         }
             if(allReceived && (participantsSingleThread.stream().allMatch(participantRef -> participantRef.getStateP().equals(states_participant.COMMIT)))){
@@ -114,7 +123,7 @@ public class CoordinatorThread extends Thread{
         //prüfe ob alle etwas erhalten haben und sende gegebenenfalls nachricht bis sie es haben...
         long startTime = System.nanoTime();
         long endTime = startTime + (5 * 1000000000L); // 5 Sekunden in Nanosekunden umrechnen
-        while(participantsSingleThread.stream().allMatch(participantRef -> participantRef.getStateP().equals(states_participant.ACK))){
+        while(!(participantsSingleThread.stream().allMatch(participantRef -> participantRef.getStateP().equals(states_participant.ACK)))){
             if(System.nanoTime() < endTime){
                 DatagramPacket tempDatagramPacket = this.monitorDataCoCoThread.getTransaction(uuid).getDatagramPacket();
                 if(tempDatagramPacket == null){
@@ -160,7 +169,7 @@ public class CoordinatorThread extends Thread{
         try{
             DatagramPacket dp = new DatagramPacket(tempSendData, tempSendData.length, this.monitorDataCoCoThread.getTransaction(uuid).clientReference.getClientAddress(), this.monitorDataCoCoThread.getTransaction(uuid).clientReference.getClientPort());
             socket.send(dp);
-            this.monitorDataCoCoThread.setTransactionStatus(uuid,states_coordinator.Finish);
+            this.monitorDataCoCoThread.setTransactionStatus(uuid, Finish);
             this.writeLogFileMonitor.writeToFile(monitorDataCoCoThread.getTransaction(this.uuid));
         }catch (IOException e) {
             throw new RuntimeException(e);

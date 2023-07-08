@@ -23,6 +23,15 @@ public class ParticipantHelperThread extends Thread{
                     DatagramPacket tempDatagrampacket = monitorDataPaPaHeThread.getDatagramPacketRequestingParticipant();
                     monitorDataPaPaHeThread.setDatagramPacketRequestingParticipant(null);
                     String lastRecordedState = this.writeLogFile.readLastRecordedState(UUID.fromString(new String(tempDatagrampacket.getData(), 0, tempDatagrampacket.getLength()).split(" ")[0]));
+                    if (lastRecordedState.equals("ABORT")) {
+                        lastRecordedState = "GLOBAL_ABORT";
+                    }
+                    else if (lastRecordedState.equals("COMMIT")) {
+                        lastRecordedState = "GLOBAL_COMMIT";
+                    }
+                    else if (lastRecordedState.equals("INIT")) {
+                        lastRecordedState = "INIT";
+                    }
                     DatagramPacket datagramPacketSend = new DatagramPacket(lastRecordedState.getBytes(), 0, lastRecordedState.getBytes().length, tempDatagrampacket.getAddress(), tempDatagrampacket.getPort());
                     socket.send(datagramPacketSend);
                 }catch (IOException e) {
@@ -30,6 +39,7 @@ public class ParticipantHelperThread extends Thread{
                 }
             }else{
                 //nichts im datagrampacket
+               
             }
         }
     }
