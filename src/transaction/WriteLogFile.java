@@ -1,6 +1,7 @@
 package transaction;
 
 import java.io.*;
+import java.net.DatagramPacket;
 import java.util.*;
 
 public class WriteLogFile {
@@ -18,18 +19,18 @@ public class WriteLogFile {
         }
     }
 
-    public synchronized void writeToFile(TransactionCoordinator transaction) {
+    public synchronized void writeToFile(TransactionCoordinator transaction, DatagramPacket dp) {
         try (FileWriter fileWriter = new FileWriter( this.logFile, true)) {
-            fileWriter.write(transaction.getUUID() + " " + transaction.getStateC() + " " + transaction.clientReference.getClientAddress() + " " + transaction.clientReference.getClientPort() + "\n");
+            fileWriter.write(transaction.getUUID() + " " + transaction.getStateC() + " " + transaction.senderReference.getSenderAddress() + " " + transaction.senderReference.getSenderPort() + " "+ new String(dp.getData(),0,dp.getLength()) +"\n");
             fileWriter.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public synchronized void writeToFileParticipant(TransactionParticipant transaction) {
+    public synchronized void writeToFileParticipant(TransactionParticipant transaction, DatagramPacket dp) {
         try (FileWriter fileWriter = new FileWriter( this.logFile, true)) {
-            fileWriter.write(transaction.getUUID() + " " + transaction.getStateP() + "\n");
+            fileWriter.write(transaction.getUUID() + " " + transaction.getStateP() + " " + transaction.senderReference.getSenderAddress() + " " + transaction.senderReference.getSenderPort() + " "+ new String(dp.getData(),0,dp.getLength()) + "\n");
             fileWriter.flush();
         } catch (IOException e) {
             e.printStackTrace();
@@ -37,7 +38,7 @@ public class WriteLogFile {
     }
     public synchronized void writeToFileFinalResult(TransactionCoordinator transaction,String finalResult) {
         try (FileWriter fileWriter = new FileWriter( this.logFile, true)) {
-            fileWriter.write(transaction.getUUID() + " " + transaction.getStateC() + " " + transaction.clientReference.getClientAddress() + " " + transaction.clientReference.getClientPort()+ " finalResult:"+finalResult);
+            fileWriter.write(transaction.getUUID() + " " + transaction.getStateC() + " " + transaction.senderReference.getSenderAddress() + " " + transaction.senderReference.getSenderPort()+ " finalResult:"+finalResult +"\n");
             fileWriter.flush();
         } catch (IOException e) {
             e.printStackTrace();

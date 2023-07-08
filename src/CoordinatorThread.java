@@ -17,6 +17,7 @@ public class CoordinatorThread extends Thread{
     private ArrayList<ParticipantRef> participantsSingleThread;
     private final DatagramSocket socket;
     private final UUID uuid;
+    private DatagramPacket tempDP;
 
     public CoordinatorThread(UUID uuid, MonitorDataCoCoThread monitorDataCoCoThread, WriteLogFile writeLogFileMonitor, ArrayList<ParticipantRef> participantsAllThreadUse, DatagramSocket socket){
         this.monitorDataCoCoThread = monitorDataCoCoThread;
@@ -61,11 +62,11 @@ public class CoordinatorThread extends Thread{
 
     private void stateInit(){
         monitorDataCoCoThread.setTransactionStatus(this.uuid, states_coordinator.INIT);
-        writeLogFileMonitor.writeToFile(monitorDataCoCoThread.getTransaction(this.uuid));
+        writeLogFileMonitor.writeToFile(monitorDataCoCoThread.getTransaction(this.uuid), this.monitorDataCoCoThread.getTransaction(this.uuid).getDatagramPacket());
 
         // Sende VOTE_REQUEST als Multicast an alle Teilnehmer
         monitorDataCoCoThread.setTransactionStatus(this.uuid, states_coordinator.WAIT);
-        writeLogFileMonitor.writeToFile(monitorDataCoCoThread.getTransaction(this.uuid));
+        writeLogFileMonitor.writeToFile(monitorDataCoCoThread.getTransaction(this.uuid), this.monitorDataCoCoThread.getTransaction(this.uuid).getDatagramPacket());
     }
     private void stateWait(){
         this.participantsAllThreadUse.stream()
@@ -78,16 +79,17 @@ public class CoordinatorThread extends Thread{
             participantRef.setStateP(states_participant.INIT);
         }
 
+
         while(System.nanoTime() < endTime && (!allReceived)){
-            DatagramPacket tempDatagramPacket = this.monitorDataCoCoThread.getTransaction(uuid).getDatagramPacket();
-            if(tempDatagramPacket == null){
+            this.tempDP = this.monitorDataCoCoThread.getTransaction(uuid).getDatagramPacket();
+            if(this.tempDP == null){
                 //nichts Neues angekommen
             }else{
                 System.out.println("ich habe kein null datapcket bekommen in wait():");
                 this.monitorDataCoCoThread.getTransaction(uuid).setDatagramPacket(null);
-                String msg[] = new String(tempDatagramPacket.getData(), 0, tempDatagramPacket.getLength()).split(" "); //msg UUID Command Content
+                String msg[] = new String(this.tempDP.getData(), 0, this.tempDP.getLength()).split(" "); //msg UUID Command Content
                 participantsSingleThread.stream()
-                        .filter(participantRef -> participantRef.getAddress().equals(tempDatagramPacket.getAddress()) && participantRef.getPort() == tempDatagramPacket.getPort())
+                        .filter(participantRef -> participantRef.getAddress().equals(this.tempDP.getAddress()) && participantRef.getPort() == this.tempDP.getPort())
                         .forEach(participantRef -> {
                             if ("VOTE_COMMIT".equals(msg[1])) {
                                 participantRef.setStateP(states_participant.COMMIT);
@@ -107,19 +109,25 @@ public class CoordinatorThread extends Thread{
                 this.monitorDataCoCoThread.setTransactionStatus(this.uuid, states_coordinator.COMMIT);
                 System.out.println("Setze mich auf Commit");
 
-                this.writeLogFileMonitor.writeToFile(monitorDataCoCoThread.getTransaction(this.uuid));
+                this.writeLogFileMonitor.writeToFile(monitorDataCoCoThread.getTransaction(this.uuid), this.tempDP);
 
             } else{
                 this.monitorDataCoCoThread.setTransactionStatus(this.uuid, states_coordinator.ABORT);
                 System.out.println("Setze mich auf Abort");
-                this.writeLogFileMonitor.writeToFile(monitorDataCoCoThread.getTransaction(this.uuid));
+                this.writeLogFileMonitor.writeToFile(monitorDataCoCoThread.getTransaction(this.uuid), this.tempDP);
 
             }
     }
 
     private void sendGlobalCommit(){
         this.participantsAllThreadUse.stream()
-            .forEach(participantRef -> sendMsgParticipant(this.uuid.toString() + " GLOBAL_COMMIT",participantRef));
+            .forEach(participantRef -> {sendMsgParticipant(this.uuid.toString() + " GLOBAL_COMMIT",participantRef);
+                                            //try {
+                                                //this.sleep(20000); //timeout für koordinator fällt aus
+                                            //} catch (InterruptedException e) {
+                                            //    throw new RuntimeException(e);
+                                            //}
+                                        });
     }
 
     private void sendGlobalAbort(){
@@ -131,7 +139,7 @@ public class CoordinatorThread extends Thread{
         final boolean finalSendCommit = monitorDataCoCoThread.getTransaction(uuid).getStateC().equals(states_coordinator.COMMIT);
         //prüfe ob alle etwas erhalten haben und sende gegebenenfalls nachricht bis sie es haben...
         long startTime = System.nanoTime();
-        long endTime = startTime + (5 * 1000000000L); // 5 Sekunden in Nanosekunden umrechnen
+        long endTime = startTime + (15 * 1000000000L); // 5 Sekunden in Nanosekunden umrechnen
         while(!(participantsSingleThread.stream().allMatch(participantRef -> participantRef.getStateP().equals(states_participant.ACK)))){
             if(System.nanoTime() < endTime){
                 DatagramPacket tempDatagramPacket = this.monitorDataCoCoThread.getTransaction(uuid).getDatagramPacket();
@@ -153,12 +161,13 @@ public class CoordinatorThread extends Thread{
                         .filter(participantRef -> !participantRef.getStateP().equals(states_participant.ACK))
                         .forEach(participantRef -> {if(finalSendCommit){
                             sendMsgParticipant(this.uuid.toString() + " GLOBAL_COMMIT",participantRef);
+                            System.out.println("ich habe ein lgobal commit gesendet");
                         }else{
                             sendMsgParticipant(this.uuid.toString() + " GLOBAL_ABORT",participantRef);
                         }
                         });
                 startTime = System.nanoTime();
-                endTime = startTime + (5 * 1000000000L);
+                endTime = startTime + (15 * 1000000000L);
             }
         }
 
@@ -176,10 +185,10 @@ public class CoordinatorThread extends Thread{
             tempSendData = "Booking-Error".getBytes();
         }
         try{
-            DatagramPacket dp = new DatagramPacket(tempSendData, tempSendData.length, this.monitorDataCoCoThread.getTransaction(uuid).clientReference.getClientAddress(), this.monitorDataCoCoThread.getTransaction(uuid).clientReference.getClientPort());
+            DatagramPacket dp = new DatagramPacket(tempSendData, tempSendData.length, this.monitorDataCoCoThread.getTransaction(uuid).senderReference.getSenderAddress(), this.monitorDataCoCoThread.getTransaction(uuid).senderReference.getSenderPort());
             socket.send(dp);
             this.monitorDataCoCoThread.setTransactionStatus(uuid, Finish);
-            this.writeLogFileMonitor.writeToFile(monitorDataCoCoThread.getTransaction(this.uuid));
+            this.writeLogFileMonitor.writeToFile(monitorDataCoCoThread.getTransaction(this.uuid),dp);
         }catch (IOException e) {
             throw new RuntimeException(e);
         }

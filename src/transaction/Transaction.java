@@ -3,6 +3,7 @@ package transaction;
 import java.net.DatagramPacket;
 import java.util.*;
 public class Transaction {
+    public SenderReference senderReference;
     private UUID uuid;
     private DatagramPacket datagramPacket;
 

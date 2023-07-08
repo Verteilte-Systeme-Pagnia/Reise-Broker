@@ -1,7 +1,4 @@
-import transaction.TransactionCoordinator;
-import transaction.TransactionParticipant;
-import transaction.WriteLogFile;
-import transaction.states_participant;
+import transaction.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,89 +11,94 @@ public class ParticipantReceive {
     private ArrayList<CoordinatorRef> coordinatorRefs;
     private ArrayList<ParticipantRef> participantRefs;
     private WriteLogFile writeLogFileMonitor;
+    private String filename;
     public ParticipantReceive(ArrayList<CoordinatorRef> coordinatorRefs,ArrayList<ParticipantRef> participantRefs, String filename){
         this.monitorDataPaPaThread = new MonitorDataPaPaThread();
         this.monitorDataPaPaHeThread = new MonitorDataPaPaHeThread();
         this.coordinatorRefs = coordinatorRefs;
         this.participantRefs = participantRefs;
         this.writeLogFileMonitor = new WriteLogFile(filename);
+        this.filename = filename;
     }
-    public static void main(String[] args) throws UnknownHostException {
-        ArrayList<CoordinatorRef> coordinatorRefs = new ArrayList<>();
-
-        coordinatorRefs.add(new CoordinatorRef(InetAddress.getByName("localhost"),Config.Coordinator1Port));
-        coordinatorRefs.add(new CoordinatorRef(InetAddress.getByName("localhost"),Config.Coordinator2Port));
-
-        ArrayList<ParticipantRef> participantRefs = new ArrayList<>();
-
-        participantRefs.add(new ParticipantRef(InetAddress.getByName("localhost"),Config.Participant2Port));
-
-        ParticipantReceive participantReceive1 = new ParticipantReceive(coordinatorRefs,participantRefs,"Participant1LogFile.txt");
-
+    public void initialize(int socketPort, String type){
         DatagramSocket socket = null;
         try{
-            socket = new DatagramSocket(Config.Participant1Port);
+            socket = new DatagramSocket(socketPort);
 
-            Scanner scanner = new Scanner(new File("Participant1LogFile.txt"));
+            Scanner scanner = new Scanner(new File(this.filename));
             System.out.println("ParticipantReceive Sanner wurde erzeugt");
-            if(scanner.hasNext()) {
+            while(scanner.hasNext()) {
                 String[] line = scanner.nextLine().split(" ");
-                if(!line[0].equals("")) {
-                    if (participantReceive1.monitorDataPaPaThread.getTransaction(UUID.fromString(line[0])) == null) {
-                        TransactionParticipant transactionParticipant = new TransactionParticipant();
-                        participantReceive1.monitorDataPaPaThread.addTransaction(UUID.fromString(line[0]), transactionParticipant);
-                    } else {
-                        participantReceive1.monitorDataPaPaThread.getTransaction(UUID.fromString(line[0])).setStateP(states_participant.valueOf(line[1]));
+                if(this.monitorDataPaPaThread.getTransaction(UUID.fromString(line[0])) == null){
+                    TransactionParticipant transactionParticipant = new TransactionParticipant(new SenderReference(Integer.parseInt(line[3]),InetAddress.getByName(line[2].replace("/",""))));
+                    transactionParticipant.setUUID(UUID.fromString(line[0]));
+                    if(line[1].equals("INIT") || line[1].equals("READY") || line[1].equals("COMMIT") || line[1].equals("ABORT") || line[1].equals("ACK")){
+                        String dpData = line[4] +" "+ line[5];
+                        DatagramPacket datagrampacket = new DatagramPacket(dpData.getBytes(),0,dpData.length());
+                        transactionParticipant.setDatagramPacket(datagrampacket);
                     }
-                }
-            }
+
+                    this.monitorDataPaPaThread.addTransaction(UUID.fromString(line[0]),transactionParticipant);
+                }else{
+                    System.out.println("setze im else zweig state c:");
+                    this.monitorDataPaPaThread.getTransaction(UUID.fromString(line[0])).setStateP(states_participant.valueOf(line[1]));
+                    if(line[1].equals("INIT") || line[1].equals("READY") || line[1].equals("COMMIT") || line[1].equals("ABORT") || line[1].equals("ACK")) {
+                        String dpData = line[4] + " " + line[5];
+                        DatagramPacket datagrampacket = new DatagramPacket(dpData.getBytes(), 0, dpData.length());
+                        this.monitorDataPaPaThread.getTransaction(UUID.fromString(line[0])).setDatagramPacket(datagrampacket);
+                    }
+
+                }            }
             System.out.println("ParticipantReceive holt sich als nächstes map");
 
-            for (Map.Entry<UUID, TransactionParticipant> entry : participantReceive1.monitorDataPaPaThread.getUuidTransactionParticipantMap().entrySet()) {
+            for (Map.Entry<UUID, TransactionParticipant> entry : this.monitorDataPaPaThread.getUuidTransactionParticipantMap().entrySet()) {
                 UUID key = entry.getKey();
-                Thread participantThread = new ParticipantThread(key,participantReceive1.monitorDataPaPaThread,participantReceive1.writeLogFileMonitor,socket, participantReceive1.participantRefs );
+                Thread participantThread = new ParticipantThread(key,this.monitorDataPaPaThread,this.writeLogFileMonitor,socket, this.participantRefs, type );
 
                 participantThread.start();
             }
 
-            Thread participantHelperThread = new ParticipantHelperThread(participantReceive1.monitorDataPaPaHeThread, socket,participantReceive1.writeLogFileMonitor);
+            Thread participantHelperThread = new ParticipantHelperThread(this.monitorDataPaPaHeThread, socket,this.writeLogFileMonitor);
             participantHelperThread.start();
             System.out.println("ParticipantReceive startet ParticipantHelperThread");
             while(true) {
                 byte buffer[] = new byte[65507];
                 DatagramPacket receiveDP = new DatagramPacket(buffer,buffer.length);
                 socket.receive(receiveDP);
-                System.out.println("ParticipantReceive hatb paket empfangen");
+                System.out.println("ParticipantReceive hat paket empfangen");
 
                 String msg = new String(receiveDP.getData(),0,receiveDP.getLength()); //Aufbau von Koordinator: UUID MSG ... /Aufbau von anderem Partizipanten:
                 //if -> from coordinator else if -> from other participant -> from a Client also ignore
                 System.out.println("ParticipantReceive "+msg);
-                if (participantReceive1.coordinatorRefs.stream().anyMatch(coordinatorRef -> coordinatorRef.getAddress().equals(receiveDP.getAddress()) && coordinatorRef.getPort() == receiveDP.getPort())){
+                if (this.coordinatorRefs.stream().anyMatch(coordinatorRef -> coordinatorRef.getAddress().equals(receiveDP.getAddress()) && coordinatorRef.getPort() == receiveDP.getPort())){
                     String[] splitMSG = msg.split(" ");//Aufbau von Koordinator: UUID MSG ...
-                    if(participantReceive1.monitorDataPaPaThread.getTransaction(UUID.fromString(splitMSG[0])) == null){//nicht in liste bereits enthalten?
-                        TransactionParticipant transactionParticipant = new TransactionParticipant();
-                        participantReceive1.monitorDataPaPaThread.addTransaction(UUID.fromString(splitMSG[0]), transactionParticipant);
-                        Thread participantThread = new ParticipantThread(UUID.fromString(splitMSG[0]),participantReceive1.monitorDataPaPaThread,participantReceive1.writeLogFileMonitor,socket, participantReceive1.participantRefs );
+                    if(this.monitorDataPaPaThread.getTransaction(UUID.fromString(splitMSG[0])) == null){//nicht in liste bereits enthalten?
+                        TransactionParticipant transactionParticipant = new TransactionParticipant(new SenderReference(receiveDP.getPort(),receiveDP.getAddress()));
+
+                        transactionParticipant.setDatagramPacket(receiveDP);
+
+                        this.monitorDataPaPaThread.addTransaction(UUID.fromString(splitMSG[0]), transactionParticipant);
+                        Thread participantThread = new ParticipantThread(UUID.fromString(splitMSG[0]),this.monitorDataPaPaThread,this.writeLogFileMonitor,socket, this.participantRefs, type );
                         participantThread.start();
                         System.out.println("ParticipantReceive startet einen neuen Thread");
                     }else{
                         //lege neues Datagrampacket packet hinein
-                        while(participantReceive1.monitorDataPaPaThread.getTransaction(UUID.fromString(splitMSG[0])).getDatagramPacket() != null){
+                        while(this.monitorDataPaPaThread.getTransaction(UUID.fromString(splitMSG[0])).getDatagramPacket() != null){
                             //warte bis Paket von Thread entnommen wurde
                         }
-                        participantReceive1.monitorDataPaPaThread.getTransaction(UUID.fromString(splitMSG[0])).setDatagramPacket(receiveDP);
+                        this.monitorDataPaPaThread.getTransaction(UUID.fromString(splitMSG[0])).setDatagramPacket(receiveDP);
                         System.out.println("ParticipantReceive hat neues Datagrampacket abgelegt");
                     }
-                }else if(participantReceive1.participantRefs.stream().anyMatch(participantRef -> participantRef.getAddress().equals(receiveDP.getAddress()) && participantRef.getPort() == receiveDP.getPort())){
+                }else if(this.participantRefs.stream().anyMatch(participantRef -> participantRef.getAddress().equals(receiveDP.getAddress()) && participantRef.getPort() == receiveDP.getPort())){
                     //gib dies dem participanthelper thread dieser schickt nachricht an den nachfrager thread
                     String[] splitMSG = msg.split(" ");//Aufbau von Partizipanten: UUID MSG ...
                     if(splitMSG.equals("DESICION_REQUEST")){
-                        while(participantReceive1.monitorDataPaPaHeThread.getDatagramPacketRequestingParticipant() != null){
+                        while(this.monitorDataPaPaHeThread.getDatagramPacketRequestingParticipant() != null){
                             //warte bis Paket von Thread entnommen wurde
                         }
-                        participantReceive1.monitorDataPaPaHeThread.setDatagramPacketRequestingParticipant(receiveDP);
+                        this.monitorDataPaPaHeThread.setDatagramPacketRequestingParticipant(receiveDP);
                     }else{
-                        participantReceive1.monitorDataPaPaThread.getTransaction(UUID.fromString(splitMSG[0])).setDatagramPacket(receiveDP);
+                        this.monitorDataPaPaThread.getTransaction(UUID.fromString(splitMSG[0])).setDatagramPacket(receiveDP);
                     }
                 }else{
                     //ignorieren irgendein anderer client

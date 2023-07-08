@@ -2,13 +2,13 @@ package transaction;
 
 public class TransactionCoordinator extends Transaction {
     private states_coordinator stateC;
-    public ClientReference clientReference;
+    public SenderReference senderReference;
     public String finalResult;
 
-    public TransactionCoordinator(ClientReference clientReference){
+    public TransactionCoordinator(SenderReference senderReference){
         super();
         this.stateC = states_coordinator.INIT;
-        this.clientReference = clientReference;
+        this.senderReference = senderReference;
     }
 
     public void setStateC(states_coordinator stateC){

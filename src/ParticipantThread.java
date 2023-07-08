@@ -19,14 +19,16 @@ public class ParticipantThread extends Thread {
     private MonitorDataPaPaThread monitorDataPaPaThread;
     private DatagramPacket tempDP;
     private ArrayList<ParticipantRef> participantRefs;
+    private String type;
 
-    public ParticipantThread(UUID uuid, MonitorDataPaPaThread monitorDataPaPaThread, WriteLogFile writeLogFileMonitor, DatagramSocket socket,ArrayList<ParticipantRef> participantRefs){
+    public ParticipantThread(UUID uuid, MonitorDataPaPaThread monitorDataPaPaThread, WriteLogFile writeLogFileMonitor, DatagramSocket socket,ArrayList<ParticipantRef> participantRefs, String type){
         this.decisionRequests = new LinkedBlockingQueue<>();
         this.uuid = uuid;
         this.monitorDataPaPaThread = monitorDataPaPaThread;
         this.writeLogFileMonitor = writeLogFileMonitor;
         this.socket = socket;
         this.participantRefs = participantRefs;
+        this.type = type;
     }
 
     public void run() {
@@ -38,21 +40,26 @@ public class ParticipantThread extends Thread {
             switch (this.monitorDataPaPaThread.getTransaction(uuid).getStateP()) {
                 case INIT:
                     stateInit();
+                    break;
                 case READY:
                     stateReady();
+                    break;
                 case COMMIT:
                     bookRoomCar();
+                    break;
                 case ABORT:
                     doAbort();
+                    break;
                 case ACK:
                     ackGlobalMsg();
+                    break;
                 case Finish:    
             }
         }
     }
 
     private void stateInit() {
-        writeLogFileMonitor.writeToFileParticipant(monitorDataPaPaThread.getTransaction(this.uuid));
+        writeLogFileMonitor.writeToFileParticipant(monitorDataPaPaThread.getTransaction(this.uuid), monitorDataPaPaThread.getTransaction(this.uuid).getDatagramPacket());
 
         long startTime = System.nanoTime();
         long endTime = startTime + (5 * 1000000000L);
@@ -74,20 +81,20 @@ public class ParticipantThread extends Thread {
                 }
             }
         }
-        System.out.print(tempDP.getAddress());
+
 
         if(vote_request) {
             if (checkDatabase()) {
                 monitorDataPaPaThread.setTransactionStatus(this.uuid, states_participant.READY);
-                writeLogFileMonitor.writeToFileParticipant(monitorDataPaPaThread.getTransaction(this.uuid));
+                writeLogFileMonitor.writeToFileParticipant(monitorDataPaPaThread.getTransaction(this.uuid),tempDP);
             } else {
                 monitorDataPaPaThread.setTransactionStatus(this.uuid, states_participant.ABORT);
-                writeLogFileMonitor.writeToFileParticipant(monitorDataPaPaThread.getTransaction(this.uuid));
+                writeLogFileMonitor.writeToFileParticipant(monitorDataPaPaThread.getTransaction(this.uuid),tempDP);
             }
         }
         else {
             monitorDataPaPaThread.setTransactionStatus(this.uuid, states_participant.ABORT);
-            writeLogFileMonitor.writeToFileParticipant(monitorDataPaPaThread.getTransaction(this.uuid));
+            writeLogFileMonitor.writeToFileParticipant(monitorDataPaPaThread.getTransaction(this.uuid),tempDP);
         }
          System.out.print("amende"+tempDP.getAddress());
 
@@ -97,52 +104,55 @@ public class ParticipantThread extends Thread {
         sendMsgCoordinator(" VOTE_COMMIT");
 
         long startTime = System.nanoTime();
-        long endTime = startTime + (5 * 1000000000L);
+        long endTime = startTime + (15 * 1000000000L);
         boolean receivedMsg = false;
         boolean expectParticipantToo = false;
-        while(!receivedMsg){
-            while (!receivedMsg) {
-                DatagramPacket tempDatagramPacket = this.monitorDataPaPaThread.getTransaction(uuid).getDatagramPacket();
-                if(System.nanoTime() < endTime){
-                    this.participantRefs.stream().forEach(participantRef ->  {sendMsgParticipant(" DESICION_REQUEST",participantRef.getAddress(),participantRef.getPort());});
-                    expectParticipantToo = true;
-                }
-                if (tempDatagramPacket == null) {
-                    //nichts Neues angekommen
-                } else {
-                    if(!expectParticipantToo){
-                        this.monitorDataPaPaThread.getTransaction(uuid).setDatagramPacket(null);
-                        String msg[] = new String(tempDatagramPacket.getData(), 0, tempDatagramPacket.getLength()).split(" ");
-                        if ("GLOBAL_COMMIT".equals(msg[1])) {
-                            monitorDataPaPaThread.setTransactionStatus(this.uuid, states_participant.COMMIT);
-                            writeLogFileMonitor.writeToFileParticipant(monitorDataPaPaThread.getTransaction(this.uuid));
-                            receivedMsg = true;
-                        } else if ("GLOBAL_ABORT".equals(msg[1])) {
-                            monitorDataPaPaThread.setTransactionStatus(this.uuid, states_participant.ACK);
-                            writeLogFileMonitor.writeToFileParticipant(monitorDataPaPaThread.getTransaction(this.uuid));
-                            receivedMsg = true;
-                        }
-                    }else{
-                        //Koordinator und Partizipant wird erwartet
-                        this.monitorDataPaPaThread.getTransaction(uuid).setDatagramPacket(null);
-                        String msg[] = new String(tempDatagramPacket.getData(), 0, tempDatagramPacket.getLength()).split(" ");
-                        if ("GLOBAL_COMMIT".equals(msg[1])) {
-                            monitorDataPaPaThread.setTransactionStatus(this.uuid, states_participant.COMMIT);
-                            writeLogFileMonitor.writeToFileParticipant(monitorDataPaPaThread.getTransaction(this.uuid));
-                            receivedMsg = true;
-                        }else if ("GLOBAL_ABORT".equals(msg[1]) || "INIT".equals(msg[1])) {
-                             monitorDataPaPaThread.setTransactionStatus(this.uuid, states_participant.ACK);
-                             writeLogFileMonitor.writeToFileParticipant(monitorDataPaPaThread.getTransaction(this.uuid));
-                             receivedMsg = true;
-                        }
+
+        while (!receivedMsg) {
+            DatagramPacket tempDatagramPacket = this.monitorDataPaPaThread.getTransaction(uuid).getDatagramPacket();
+            if(System.nanoTime() > endTime){
+                this.participantRefs.stream().forEach(participantRef ->  {sendMsgParticipant(" DESICION_REQUEST",participantRef.getAddress(),participantRef.getPort());});
+                expectParticipantToo = true;
+                 startTime = System.nanoTime();
+                 endTime = startTime + (15 * 1000000000L);
+            }
+            if (tempDatagramPacket == null) {
+                //nichts Neues angekommen
+            } else {
+                if(!expectParticipantToo){
+                    this.monitorDataPaPaThread.getTransaction(uuid).setDatagramPacket(null);
+                    String msg[] = new String(tempDatagramPacket.getData(), 0, tempDatagramPacket.getLength()).split(" ");
+                    if ("GLOBAL_COMMIT".equals(msg[1])) {
+                        monitorDataPaPaThread.setTransactionStatus(this.uuid, states_participant.COMMIT);
+                        writeLogFileMonitor.writeToFileParticipant(monitorDataPaPaThread.getTransaction(this.uuid),tempDatagramPacket);
+                        receivedMsg = true;
+                    } else if ("GLOBAL_ABORT".equals(msg[1])) {
+                        monitorDataPaPaThread.setTransactionStatus(this.uuid, states_participant.ACK);
+                        writeLogFileMonitor.writeToFileParticipant(monitorDataPaPaThread.getTransaction(this.uuid),tempDatagramPacket);
+                        receivedMsg = true;
+                    }
+                }else{
+                    //Koordinator und Partizipant wird erwartet
+                    this.monitorDataPaPaThread.getTransaction(uuid).setDatagramPacket(null);
+                    String msg[] = new String(tempDatagramPacket.getData(), 0, tempDatagramPacket.getLength()).split(" ");
+                    if ("GLOBAL_COMMIT".equals(msg[1])) {
+                        monitorDataPaPaThread.setTransactionStatus(this.uuid, states_participant.COMMIT);
+                        writeLogFileMonitor.writeToFileParticipant(monitorDataPaPaThread.getTransaction(this.uuid),tempDatagramPacket);
+                        receivedMsg = true;
+                    }else if ("GLOBAL_ABORT".equals(msg[1]) || "INIT".equals(msg[1])) {
+                         monitorDataPaPaThread.setTransactionStatus(this.uuid, states_participant.ACK);
+                         writeLogFileMonitor.writeToFileParticipant(monitorDataPaPaThread.getTransaction(this.uuid),tempDatagramPacket);
+                         receivedMsg = true;
                     }
                 }
             }
         }
+
     }
 
     private void doAbort() {
-        sendMsgCoordinator("VOTE_ABORT");
+        sendMsgCoordinator(" VOTE_ABORT");
+        System.out.println("ABOOOOOOOOOOOOOOORT");
         boolean receivedMsg = false;
 
         while(!receivedMsg){
@@ -150,17 +160,23 @@ public class ParticipantThread extends Thread {
             if(tempDP == null){
 
             }else{
+                this.monitorDataPaPaThread.getTransaction(uuid).setDatagramPacket(null);
                 String[] msg = new String(tempDP.getData(),0,tempDP.getLength()).split(" ");
                 if(msg[1].equals("GLOBAL_ABORT")){
                     receivedMsg = true;
                 }
             }
         }
+        monitorDataPaPaThread.setTransactionStatus(this.uuid, states_participant.ACK);
+        writeLogFileMonitor.writeToFileParticipant(monitorDataPaPaThread.getTransaction(this.uuid),tempDP);
 
     }
 
     private void ackGlobalMsg() {
-        sendMsgCoordinator("ACK");
+        System.out.println("Ich bin im ack");
+        sendMsgCoordinator(" ACK");
+        monitorDataPaPaThread.setTransactionStatus(this.uuid, states_participant.Finish);
+        writeLogFileMonitor.writeToFileParticipant(monitorDataPaPaThread.getTransaction(this.uuid),tempDP);
     }
 
 
@@ -168,14 +184,30 @@ public class ParticipantThread extends Thread {
 
     private boolean checkDatabase() {
         // Logik um in datenbank zu checken ob etwas da ist und ggfs zu reservieren
-        return true;
+
+        if(this.type.equals("Hotel")){
+            //Datenbank hotel checken
+            return true;
+        }else if(this.type.equals("Autoverleih")){
+            //Datenbank autoverleih checken
+            return false;
+        }
+
+        return false;
     }
 
     private void bookRoomCar() {
         // Logik um Mietwagen/hotelzimmer aus der datenbank zu nehmen
 
-        monitorDataPaPaThread.setTransactionStatus(this.uuid, states_participant.INIT);
-        writeLogFileMonitor.writeToFileParticipant(monitorDataPaPaThread.getTransaction(this.uuid));
+        if(this.type.equals("Hotel")){
+            //Datenbank hotel buchen
+        }else if(this.type.equals("Autoverleih")){
+            //Datenbank auto buchen
+        }
+
+        System.out.println("Ich bin im Commit");
+        monitorDataPaPaThread.setTransactionStatus(this.uuid, states_participant.ACK);
+        writeLogFileMonitor.writeToFileParticipant(monitorDataPaPaThread.getTransaction(this.uuid),tempDP);
     }
 
     private void sendMsgCoordinator(String message){

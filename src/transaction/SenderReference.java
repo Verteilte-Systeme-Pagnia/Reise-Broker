@@ -1,18 +1,18 @@
 package transaction;
 import java.net.*;
 
-public class ClientReference {
+public class SenderReference {
     private int port;
     private InetAddress inetAddress;
-    public ClientReference (int port, InetAddress inetAddress){
+    public SenderReference(int port, InetAddress inetAddress){
         this.port = port;
         this.inetAddress = inetAddress;
     }
-    public int getClientPort() {
+    public int getSenderPort() {
         return port;
     }
 
-    public InetAddress getClientAddress() {
+    public InetAddress getSenderAddress() {
         return inetAddress;
     }
 }
