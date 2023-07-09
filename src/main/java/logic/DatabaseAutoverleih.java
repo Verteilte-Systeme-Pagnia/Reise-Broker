@@ -3,53 +3,31 @@ package logic;
 import java.sql.*;
 import java.util.concurrent.Semaphore;
 
-public class DatabaseHotel {
+public class DatabaseAutoverleih {
     private Connection connection;
     private Semaphore semaphore = new Semaphore(1,true);
-
-    public DatabaseHotel(){
+    public DatabaseAutoverleih() {
         try {
-            this.connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/hotel", "root", "pass");
+            this.connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/autoverleih", "root", "pass");
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
-    public int getFreeRooms(String startDate, String endDate) {
+
+    public int getFreeCars(String startDate, String endDate) {
         try {
             semaphore.acquire();
             try {
                 this.checkOutdatedBookings();
-                String sql = "SELECT COUNT(*) FROM zimmer WHERE " + "reserved = 0 AND" +
-                        " id NOT IN (SELECT roomId FROM buchungen WHERE (startDatum >= " + "'" + startDate + "'" + " AND startDatum <=  " + "'" + endDate + "'" + ") OR (" +
+                String sql = "SELECT COUNT(*) FROM autos WHERE " + "reserved = 0 AND" +
+                        " id NOT IN (SELECT carId FROM buchungen WHERE (startDatum >= " + "'" + startDate + "'" + " AND startDatum <=  " + "'" + endDate + "'" + ") OR (" +
                         " endDatum >= " + "'" + startDate + "'" + " AND endDatum <= " + "'" + endDate + "'" + ") )";
 
                 PreparedStatement ps = this.connection.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery();
                 rs.next();
                 return rs.getInt("COUNT(*)");
-
-            } catch(SQLException e){
-                e.printStackTrace();
-            }finally {
-                semaphore.release();
-            }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        return -1;
-    }
-
-    public int getReservedRooms()  {
-        try {
-            semaphore.acquire();
-            try {
-                String sql = "SELECT COUNT(*) FROM zimmer WHERE reserved = 1";
-                PreparedStatement ps = this.connection.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery();
-                rs.next();
-                return rs.getInt("COUNT(*)");
-
-            }catch(SQLException e){
+            }catch (SQLException e){
                 e.printStackTrace();
             }finally {
                 semaphore.release();
@@ -58,15 +36,34 @@ public class DatabaseHotel {
             throw new RuntimeException(e);
         }
         return -1;
-        }
+    }
 
-
-    public boolean reserveRoom( int number, String startDate, String endDate, String transactionId) {
+    public int getReservedCars() {
         try {
             semaphore.acquire();
             try {
-                String sql = "UPDATE zimmer SET reserved = 1, SET transactionId =" + transactionId + " WHERE reserved = 0 AND id NOT IN " +
-                        "(SELECT roomId FROM buchungen WHERE (startDatum >= " + "'" + startDate + "'" + " AND startDatum <=  " + "'" + endDate + "'" + ") OR (" +
+                String sql = "SELECT COUNT(*) FROM autos WHERE reserved = 1";
+                PreparedStatement ps = this.connection.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery();
+                rs.next();
+                return rs.getInt("COUNT(*)");
+            }catch (SQLException e){
+                e.printStackTrace();
+            }finally {
+                semaphore.release();
+            }
+        }catch(InterruptedException e){
+            throw new RuntimeException(e);
+        }
+        return -1;
+    }
+
+    public boolean reserveCar( int number, String startDate, String endDate,String transactionId){
+        try {
+            semaphore.acquire();
+            try {
+                String sql = "UPDATE autos SET reserved = 1, SET transactionId =" + transactionId + " WHERE reserved = 0 AND id NOT IN " +
+                        "(SELECT carId FROM buchungen WHERE (startDatum >= " + "'" + startDate + "'" + " AND startDatum <=  " + "'" + endDate + "'" + ") OR (" +
                         " endDatum >= " + "'" + startDate + "'" + " AND endDatum <= " + "'" + endDate + "'" + ") ) LIMIT " + number;
                 PreparedStatement ps = this.connection.prepareStatement(sql);
                 int affectedRows = ps.executeUpdate();
@@ -74,62 +71,63 @@ public class DatabaseHotel {
                     cancelReservation(transactionId);
                     return false;
                 }
-            }catch (SQLException e){
+                /*Wenn die Anzahl der zu reservierenden Autos mit der Anzahl der aktualisierten Zeilen übereinstimmt, war die Datenbankoperation erfolgreich.*/
+
+            }catch(SQLException e ){
                 e.printStackTrace();
-            }finally {
+            }finally{
                 semaphore.release();
             }
         }catch(InterruptedException e){
             throw new RuntimeException(e);
         }
-        /*Wenn die Anzahl der zu reservierenden Autos mit der Anzahl der aktualisierten Zeilen übereinstimmt, war die Datenbankoperation erfolgreich.*/
         return true;
     }
 
-    public  boolean cancelReservation(String transactionId) {
-        try{
+    public boolean cancelReservation(String transactionId) {
+        try {
             semaphore.acquire();
             try {
-                String sql = "UPDATE zimmer SET reserved = 0 WHERE reserved = 1 AND transactionId = " + transactionId;
+                String sql = "UPDATE autos SET reserved = 0 WHERE reserved = 1 AND transactionId = " + transactionId;
                 PreparedStatement ps = this.connection.prepareStatement(sql);
                 ps.executeUpdate();
-                /*Wenn es keine reservierten Zimmer mehr gibt, war die Datenbankoperation erfolgreich*/
-                return this.getReservedRooms() == 0;
+                /*Wenn es keine reservierten Autos mehr gibt, war die Datenbankoperation erfolgreich*/
+                return this.getReservedCars() == 0;
             }catch(SQLException e){
                 e.printStackTrace();
             }finally {
                 semaphore.release();
             }
-        }catch(InterruptedException e){
+        }catch(InterruptedException e ){
             throw new RuntimeException(e);
         }
         return false;
     }
 
-    public synchronized boolean bookReservedRooms(String startDate, String endDate,String transactionId){
+    public boolean bookReservedCars(String startDate, String endDate, String transactioniD){
         try {
             semaphore.acquire();
             try {
-                int reservedRooms = getReservedRooms();
+                int reservedCars = getReservedCars();
                 int insertCount = 0;
-                for (int i = 0; i < reservedRooms; i++) {
-                    String sql = "INSERT INTO buchungen (roomId,startDatum,endDatum) " +
-                            "VALUES((SELECT id FROM zimmer WHERE reserved = 1 ÁND transactionId = " + transactionId + "Limit 1)," + "'" + startDate + "', '" + endDate + "' )";
+                for (int i = 0; i < reservedCars; i++) {
+                    String sql = "INSERT INTO buchungen (carId,startDatum,endDatum) " +
+                            "VALUES((SELECT id FROM autos WHERE reserved = 1 AND transactioniD = " + transactioniD + " LIMIT 1)," + "'" + startDate + "', '" + endDate + "' )";
                     PreparedStatement ps = this.connection.prepareStatement(sql);
                     insertCount += ps.executeUpdate();
-                    sql = "UPDATE zimmer SET reserved = 0 WHERE reserved = 1 LIMIT 1";
+                    sql = "UPDATE autos SET reserved = 0 WHERE reserved = 1 LIMIT 1";
                     ps = this.connection.prepareStatement(sql);
                     ps.executeUpdate();
-                    /*Wenn es keine reservierten Zimmer mehr gibt und genauso viele Buchungen erstellt wurden,
-                    wie ursprünglich reservierte Autos, dann war die Datenbankoperation erfolgreich.*/
-                    return getReservedRooms() == 0 && reservedRooms == insertCount;
                 }
-            }catch (SQLException e){
+                /*Wenn es keine reservierten Autos mehr gibt und genauso viele Buchungen erstellt wurden,
+                wie ursprünglich reservierte Autos, dann war die Datenbankoperation erfolgreich.*/
+                return getReservedCars() == 0 && reservedCars == insertCount;
+            }catch(SQLException e){
                 e.printStackTrace();
             }finally {
                 semaphore.release();
             }
-        }catch(InterruptedException e){
+        }catch (InterruptedException e){
             throw new RuntimeException(e);
         }
         return false;
@@ -153,9 +151,10 @@ public class DatabaseHotel {
             }finally {
                 semaphore.release();
             }
-            }catch(InterruptedException e){
+        }catch (InterruptedException e){
             throw new RuntimeException(e);
         }
         return false;
     }
+
 }
