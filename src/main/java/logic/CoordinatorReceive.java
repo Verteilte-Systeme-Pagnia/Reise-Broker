@@ -11,12 +11,14 @@ public class CoordinatorReceive {
     private ArrayList<ParticipantRef> participants; // Liste der Teilnehmer
     private WriteLogFile writeLogFileMonitor;
     private String logFileName;
+    private Map<UUID, SenderReference> uuidTransactionParticipantClient;
 
     public CoordinatorReceive(ArrayList<ParticipantRef> participants, String logFileName) {
         this.writeLogFileMonitor = new WriteLogFile(logFileName);
         this.participants = participants;
         this.monitorDataCoCoThread = new MonitorDataCoCoThread();
         this.logFileName = logFileName;
+        this.uuidTransactionParticipantClient = new HashMap<>();
     }
     public void initialize(int socketPort){
 
@@ -31,7 +33,7 @@ public class CoordinatorReceive {
             while(scanner.hasNext()) {
                 String[] line = scanner.nextLine().split(" ");
                 if(this.monitorDataCoCoThread.getTransaction(UUID.fromString(line[0])) == null){
-                    TransactionCoordinator transactionCoordinator = new TransactionCoordinator(new SenderReference(Integer.parseInt(line[3]),InetAddress.getByName(line[2].replace("/",""))));
+                    TransactionCoordinator transactionCoordinator = new TransactionCoordinator(new SenderReference(Integer.parseInt(line[3]),InetAddress.getByName(line[2].replace("/",""))),Integer.parseInt(line[5]),Integer.parseInt(line[6]),line[7],line[8]);
                     transactionCoordinator.setUUID(UUID.fromString(line[0]));
                     if(line[1].equals("INIT") || line[1].equals("WAIT")){
                         String dpData = line[4] +" "+ line[5];
@@ -75,24 +77,43 @@ public class CoordinatorReceive {
                  socket.receive(receiveDP);
                  System.out.println("DatagramPacket bekommen");
 
-                 if(participants.stream().anyMatch(participantRef -> participantRef.getAddress().equals(receiveDP.getAddress()) && participantRef.getPort() == receiveDP.getPort())){//Nachricht von Partizipanten
-                     //ändere von uuid in coordinator list auf den zustand des partizipanten das thread ausführen kann
-                     System.out.println(new String(receiveDP.getData(), 0, receiveDP.getLength()));
-                     UUID tempUUID = UUID.fromString(new String(receiveDP.getData(), 0, receiveDP.getLength()).split(" ")[0]); // get UUID from message Structure -> UUID Command Content etc.
-                     while(this.monitorDataCoCoThread.getTransaction(tempUUID).getDatagramPacket() != null){
-                         //warte bis Paket von Thread entnommen wurde
+                 String initializeMsg = new String(receiveDP.getData(),0,receiveDP.getLength());
+
+                 if(initializeMsg.contains("InitializeClient")) {
+                     if (participants.stream().anyMatch(participantRef -> participantRef.getAddress().equals(receiveDP.getAddress()) && participantRef.getPort() == receiveDP.getPort())) {//Nachricht von Partizipanten
+                         String[] splitInitializeMsg = initializeMsg.split(" ");
+                         SenderReference senderReference = uuidTransactionParticipantClient.get(UUID.fromString(splitInitializeMsg[1]));
+                         socket.send(new DatagramPacket(initializeMsg.getBytes(), initializeMsg.length(), senderReference.getSenderAddress(), senderReference.getSenderPort()));
+                     }else{
+                         SenderReference senderReference = new SenderReference(receiveDP.getPort(),receiveDP.getAddress());
+                         UUID tempUUID = UUID.randomUUID();
+                         uuidTransactionParticipantClient.put(tempUUID,senderReference);
+                         String msg = initializeMsg + " "+tempUUID;
+                         for(ParticipantRef participant : participants){
+                             socket.send(new DatagramPacket(msg.getBytes(), msg.length(), participant.getAddress(), participant.getPort()));
+                         }
                      }
-                     this.monitorDataCoCoThread.getTransaction(tempUUID).setDatagramPacket(receiveDP);
-                 }else{//Client
-                     TransactionCoordinator transaction = new TransactionCoordinator(new SenderReference(receiveDP.getPort(), receiveDP.getAddress()));
-                     System.out.println("Nachricht von Client empfangen");
-                     UUID tempUUID = transaction.getUUID();
-                     this.monitorDataCoCoThread.addTransaction(transaction);// müssen wir über monitor noch synchronizen
-                     System.out.println("Inhalt" + new String(receiveDP.getData(), 0, receiveDP.getLength()));
-                     this.monitorDataCoCoThread.getTransaction(tempUUID).setDatagramPacket(receiveDP);
-                     Thread coordinatorThread = new CoordinatorThread(tempUUID, this.monitorDataCoCoThread, this.writeLogFileMonitor, this.participants, socket);
-                     coordinatorThread.start();
-                     System.out.println("Thread gestartet");
+                 }else{
+                     if (participants.stream().anyMatch(participantRef -> participantRef.getAddress().equals(receiveDP.getAddress()) && participantRef.getPort() == receiveDP.getPort())) {//Nachricht von Partizipanten
+                         //ändere von uuid in coordinator list auf den zustand des partizipanten das thread ausführen kann
+                         System.out.println(new String(receiveDP.getData(), 0, receiveDP.getLength()));
+                         UUID tempUUID = UUID.fromString(new String(receiveDP.getData(), 0, receiveDP.getLength()).split(" ")[0]); // get UUID from message Structure -> UUID Command Content etc.
+                         while (this.monitorDataCoCoThread.getTransaction(tempUUID).getDatagramPacket() != null) {
+                             //warte bis Paket von Thread entnommen wurde
+                         }
+                         this.monitorDataCoCoThread.getTransaction(tempUUID).setDatagramPacket(receiveDP);
+                     } else {//Client
+                         String[] receivedMSG = new String(receiveDP.getData(), 0, receiveDP.getLength()).split(" ");
+                         TransactionCoordinator transaction = new TransactionCoordinator(new SenderReference(receiveDP.getPort(), receiveDP.getAddress()), Integer.parseInt(receivedMSG[0]), Integer.parseInt(receivedMSG[1]), receivedMSG[2], receivedMSG[3]);
+                         System.out.println("Nachricht von Client empfangen");
+                         UUID tempUUID = transaction.getUUID();
+                         this.monitorDataCoCoThread.addTransaction(transaction);// müssen wir über monitor noch synchronizen
+                         System.out.println("Inhalt" + new String(receiveDP.getData(), 0, receiveDP.getLength()));
+                         this.monitorDataCoCoThread.getTransaction(tempUUID).setDatagramPacket(receiveDP);
+                         Thread coordinatorThread = new CoordinatorThread(tempUUID, this.monitorDataCoCoThread, this.writeLogFileMonitor, this.participants, socket);
+                         coordinatorThread.start();
+                         System.out.println("Thread gestartet");
+                     }
                  }
             }
 

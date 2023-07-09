@@ -21,7 +21,7 @@ public class WriteLogFile {
 
     public synchronized void writeToFile(TransactionCoordinator transaction, DatagramPacket dp) {
         try (FileWriter fileWriter = new FileWriter( this.logFile, true)) {
-            fileWriter.write(transaction.getUUID() + " " + transaction.getStateC() + " " + transaction.senderReference.getSenderAddress() + " " + transaction.senderReference.getSenderPort() + " "+ new String(dp.getData(),0,dp.getLength()) +"\n");
+            fileWriter.write(transaction.getUUID() + " " + transaction.getStateC() + " " + transaction.senderReference.getSenderAddress() + " " + transaction.senderReference.getSenderPort() + " "+ new String(dp.getData(),0,dp.getLength()) + " "+ transaction.rooms+ " "+ transaction.autos+ " "+ transaction.fromDate+ " "+ transaction.toDate+"\n");
             fileWriter.flush();
         } catch (IOException e) {
             e.printStackTrace();
@@ -30,7 +30,7 @@ public class WriteLogFile {
 
     public synchronized void writeToFileParticipant(TransactionParticipant transaction, DatagramPacket dp) {
         try (FileWriter fileWriter = new FileWriter( this.logFile, true)) {
-            fileWriter.write(transaction.getUUID() + " " + transaction.getStateP() + " " + transaction.senderReference.getSenderAddress() + " " + transaction.senderReference.getSenderPort() + " "+ new String(dp.getData(),0,dp.getLength()) + "\n");
+            fileWriter.write(transaction.getUUID() + " " + transaction.getStateP() + " " + transaction.senderReference.getSenderAddress() + " " + transaction.senderReference.getSenderPort() + " "+ new String(dp.getData(),0,dp.getLength()) + " "+ transaction.rooms+ " "+ transaction.autos+ " "+ transaction.fromDate+ " "+ transaction.toDate+"\n");
             fileWriter.flush();
         } catch (IOException e) {
             e.printStackTrace();

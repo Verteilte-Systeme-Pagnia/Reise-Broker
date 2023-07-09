@@ -3,6 +3,7 @@ package logic;
 import logic.transaction.*;
 import java.io.*;
 import java.net.*;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -19,8 +20,10 @@ public class ParticipantThread extends Thread {
     private DatagramPacket tempDP;
     private ArrayList<ParticipantRef> participantRefs;
     private String type;
+    private DatabaseHotel databaseHotel;
+    private DatabaseAutoverleih databaseAutoverleih;
 
-    public ParticipantThread(UUID uuid, MonitorDataPaPaThread monitorDataPaPaThread, WriteLogFile writeLogFileMonitor, DatagramSocket socket,ArrayList<ParticipantRef> participantRefs, String type){
+    public ParticipantThread(UUID uuid, MonitorDataPaPaThread monitorDataPaPaThread, WriteLogFile writeLogFileMonitor, DatagramSocket socket,ArrayList<ParticipantRef> participantRefs, String type, DatabaseHotel databaseHotel){
         this.decisionRequests = new LinkedBlockingQueue<>();
         this.uuid = uuid;
         this.monitorDataPaPaThread = monitorDataPaPaThread;
@@ -28,6 +31,18 @@ public class ParticipantThread extends Thread {
         this.socket = socket;
         this.participantRefs = participantRefs;
         this.type = type;
+        this.databaseHotel = databaseHotel;
+    }
+
+    public ParticipantThread(UUID uuid, MonitorDataPaPaThread monitorDataPaPaThread, WriteLogFile writeLogFileMonitor, DatagramSocket socket,ArrayList<ParticipantRef> participantRefs, String type, DatabaseAutoverleih databaseAutoverleih){
+        this.decisionRequests = new LinkedBlockingQueue<>();
+        this.uuid = uuid;
+        this.monitorDataPaPaThread = monitorDataPaPaThread;
+        this.writeLogFileMonitor = writeLogFileMonitor;
+        this.socket = socket;
+        this.participantRefs = participantRefs;
+        this.type = type;
+        this.databaseAutoverleih = databaseAutoverleih;
     }
 
     public void run() {
@@ -128,6 +143,12 @@ public class ParticipantThread extends Thread {
                     } else if ("GLOBAL_ABORT".equals(msg[1])) {
                         monitorDataPaPaThread.setTransactionStatus(this.uuid, states_participant.ACK);
                         writeLogFileMonitor.writeToFileParticipant(monitorDataPaPaThread.getTransaction(this.uuid),tempDatagramPacket);
+                        if(type.equals("Hotel")){
+
+                            databaseHotel.cancelReservation(String.valueOf(this.uuid));
+                        }else if(type.equals("Autoverleih")){
+                            databaseAutoverleih.cancelReservation(String.valueOf(this.uuid));
+                        }
                         receivedMsg = true;
                     }
                 }else{
@@ -183,13 +204,13 @@ public class ParticipantThread extends Thread {
 
     private boolean checkDatabase() {
         // Logik um in datenbank zu checken ob etwas da ist und ggfs zu reservieren
-
+        TransactionParticipant participantTransaction = monitorDataPaPaThread.getTransaction(uuid);
         if(this.type.equals("Hotel")){
             //Datenbank hotel checken
-            return true;
+            return databaseHotel.reserveRoom(participantTransaction.rooms,participantTransaction.fromDate,participantTransaction.toDate, String.valueOf(uuid));
         }else if(this.type.equals("Autoverleih")){
             //Datenbank autoverleih checken
-            return false;
+            return databaseAutoverleih.reserveCar(participantTransaction.rooms,participantTransaction.fromDate,participantTransaction.toDate, String.valueOf(uuid));
         }
 
         return false;
@@ -197,11 +218,11 @@ public class ParticipantThread extends Thread {
 
     private void bookRoomCar() {
         // Logik um Mietwagen/hotelzimmer aus der datenbank zu nehmen
-
+        TransactionParticipant participantTransaction = monitorDataPaPaThread.getTransaction(uuid);
         if(this.type.equals("Hotel")){
-            //Datenbank hotel buchen
+            databaseHotel.bookReservedRooms(participantTransaction.fromDate,participantTransaction.toDate, String.valueOf(uuid));
         }else if(this.type.equals("Autoverleih")){
-            //Datenbank auto buchen
+            databaseAutoverleih.bookReservedCars(participantTransaction.fromDate,participantTransaction.toDate, String.valueOf(uuid));
         }
 
         System.out.println("Ich bin im Commit");

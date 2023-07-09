@@ -195,6 +195,8 @@ public class CoordinatorThread extends Thread{
     }
     private void sendMsgParticipant(String message, ParticipantRef participantRef){
         try {
+            TransactionCoordinator tempTransaction = this.monitorDataCoCoThread.getTransaction(uuid);
+            message = message + " "+ tempTransaction.rooms + " "+tempTransaction.autos+ " "+tempTransaction.fromDate+ " "+tempTransaction.toDate;
             byte[] tempSendData = message.getBytes();
             DatagramPacket dp = new DatagramPacket(tempSendData, tempSendData.length, participantRef.getAddress(), participantRef.getPort());
             this.socket.send(dp);
