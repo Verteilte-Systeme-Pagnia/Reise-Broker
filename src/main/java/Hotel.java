@@ -21,7 +21,7 @@ public class Hotel {
         }
     }
     public static void main(String[] args) {
-       /* try{
+        try{
             ArrayList<CoordinatorRef> coordinatorRefs = new ArrayList<>();
 
             coordinatorRefs.add(new CoordinatorRef(InetAddress.getByName("localhost"), Config.Coordinator1Port));
@@ -36,21 +36,7 @@ public class Hotel {
 
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
-        }*/
-
-        Hotel hotel = new Hotel();
-
-        String startDate = "2023-07-10";
-        String endDate = "2023-07-20";
-        try{
-            System.out.println(hotel.getFreeRooms(startDate,endDate));
-            //System.out.println(hotel.reserveRoom(3,startDate,endDate));
-            //System.out.println(hotel.bookReservedRooms(startDate,endDate));
-            //System.out.println(hotel.checkOutdatedBookings());
-        }catch(SQLException throwables){
-            throwables.printStackTrace();
         }
-
 
 
 
@@ -76,31 +62,34 @@ public class Hotel {
         return rs.getInt("COUNT(*)");
     }
 
-    public  boolean reserveRoom( int number, String startDate, String endDate) throws SQLException {
-        String sql = "UPDATE zimmer SET reserved = 1 WHERE reserved = 0 AND id NOT IN " +
+    public synchronized boolean reserveRoom( int number, String startDate, String endDate, String transactionId) throws SQLException {
+        String sql = "UPDATE zimmer SET reserved = 1, SET transactionId =" + transactionId +  " WHERE reserved = 0 AND id NOT IN " +
                      "(SELECT roomId FROM buchungen WHERE (startDatum >= " + "'" +  startDate + "'" + " AND startDatum <=  " + "'" + endDate + "'" + ") OR (" +
                      " endDatum >= " + "'" + startDate + "'" + " AND endDatum <= " + "'" + endDate + "'" + ") ) LIMIT " + number;
         PreparedStatement ps = this.connection.prepareStatement(sql);
         int affectedRows = ps.executeUpdate();
+        if(affectedRows != number){
+            cancelReservation(transactionId);
+            return false;
+        }
         /*Wenn die Anzahl der zu reservierenden Autos mit der Anzahl der aktualisierten Zeilen übereinstimmt, war die Datenbankoperation erfolgreich.*/
-        return affectedRows == number;
+        return true;
     }
 
-    public  boolean cancelReservation() throws SQLException {
-        String sql = "UPDATE zimmer SET reserved = 0 WHERE reserved = 1";
+    public synchronized boolean cancelReservation(String transactionId) throws SQLException {
+        String sql = "UPDATE zimmer SET reserved = 0 WHERE reserved = 1 AND transactionId = " + transactionId;;
         PreparedStatement ps = this.connection.prepareStatement(sql);
         ps.executeUpdate();
         /*Wenn es keine reservierten Zimmer mehr gibt, war die Datenbankoperation erfolgreich*/
         return this.getReservedRooms() == 0;
     }
 
-    public boolean bookReservedRooms(String startDate, String endDate) throws  SQLException{
+    public synchronized boolean bookReservedRooms(String startDate, String endDate,String transactionId) throws  SQLException{
         int reservedRooms = getReservedRooms();
         int insertCount = 0;
         for(int i = 0; i<reservedRooms;i++) {
             String sql = "INSERT INTO buchungen (roomId,startDatum,endDatum) " +
-                         "VALUES((SELECT id FROM zimmer WHERE reserved = 1 LIMIT 1)," + "'" + startDate + "', '" + endDate + "' )";
-            System.out.printf(sql);
+                         "VALUES((SELECT id FROM zimmer WHERE reserved = 1 ÁND transactionId = " + transactionId + "Limit 1)," + "'" + startDate + "', '" + endDate + "' )";
             PreparedStatement ps = this.connection.prepareStatement(sql);
             insertCount += ps.executeUpdate();
             sql = "UPDATE zimmer SET reserved = 0 WHERE reserved = 1 LIMIT 1";

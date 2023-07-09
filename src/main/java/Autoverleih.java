@@ -20,7 +20,7 @@ public class Autoverleih {
     }
 
     public static void main(String[] args) {
-        /*try{
+        try{
             ArrayList<CoordinatorRef> coordinatorRefs = new ArrayList<>();
 
             coordinatorRefs.add(new CoordinatorRef(InetAddress.getByName("localhost"), Config.Coordinator1Port));
@@ -35,20 +35,8 @@ public class Autoverleih {
 
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
-        }*/
-
-        Autoverleih autoverleih = new Autoverleih();
-
-        String startDate = "2023-07-10";
-        String endDate = "2023-07-20";
-        try{
-            System.out.println(autoverleih.getFreeCars(startDate,endDate));
-            //System.out.println(hotel.reserveRoom(3,startDate,endDate));
-            //System.out.println(hotel.bookReservedRooms(startDate,endDate));
-            //System.out.println(hotel.checkOutdatedBookings());
-        }catch(SQLException throwables){
-            throwables.printStackTrace();
         }
+
     }
 
     public int getFreeCars(String startDate, String endDate) throws SQLException {
@@ -72,8 +60,8 @@ public class Autoverleih {
         return rs.getInt("COUNT(*)");
     }
 
-    public  boolean reserveCar( int number, String startDate, String endDate) throws SQLException {
-        String sql = "UPDATE autos SET reserved = 1 WHERE reserved = 0 AND id NOT IN " +
+    public synchronized boolean reserveCar( int number, String startDate, String endDate,String transactionId) throws SQLException {
+        String sql = "UPDATE autos SET reserved = 1, SET transactionId =" + transactionId + " WHERE reserved = 0 AND id NOT IN " +
                 "(SELECT carId FROM buchungen WHERE (startDatum >= " + "'" +  startDate + "'" + " AND startDatum <=  " + "'" + endDate + "'" + ") OR (" +
                 " endDatum >= " + "'" + startDate + "'" + " AND endDatum <= " + "'" + endDate + "'" + ") ) LIMIT " + number;
         PreparedStatement ps = this.connection.prepareStatement(sql);
@@ -82,21 +70,20 @@ public class Autoverleih {
         return affectedRows == number;
     }
 
-    public  boolean cancelReservation() throws SQLException {
-        String sql = "UPDATE autos SET reserved = 0 WHERE reserved = 1";
+    public  synchronized boolean cancelReservation(String transactionId) throws SQLException {
+        String sql = "UPDATE autos SET reserved = 0 WHERE reserved = 1 AND transactionId = " + transactionId;
         PreparedStatement ps = this.connection.prepareStatement(sql);
         ps.executeUpdate();
         /*Wenn es keine reservierten Autos mehr gibt, war die Datenbankoperation erfolgreich*/
         return this.getReservedCars() == 0;
     }
 
-    public boolean bookReservedCars(String startDate, String endDate) throws  SQLException{
+    public synchronized boolean  bookReservedCars(String startDate, String endDate, String transactioniD) throws  SQLException{
         int reservedCars = getReservedCars();
         int insertCount = 0;
         for(int i = 0; i<reservedCars;i++) {
             String sql = "INSERT INTO buchungen (carId,startDatum,endDatum) " +
-                    "VALUES((SELECT id FROM autos WHERE reserved = 1 LIMIT 1)," + "'" + startDate + "', '" + endDate + "' )";
-            System.out.printf(sql);
+                    "VALUES((SELECT id FROM autos WHERE reserved = 1 AND transactioniD = " + transactioniD + " LIMIT 1)," + "'" + startDate + "', '" + endDate + "' )";
             PreparedStatement ps = this.connection.prepareStatement(sql);
             insertCount += ps.executeUpdate();
             sql = "UPDATE autos SET reserved = 0 WHERE reserved = 1 LIMIT 1";
