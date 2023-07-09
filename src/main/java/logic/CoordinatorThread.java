@@ -97,7 +97,7 @@ public class CoordinatorThread extends Thread{
                                 participantRef.setStateP(states_participant.ABORT);
                             }
                         });
-                allReceived = participantsSingleThread.stream().allMatch(participantRef -> participantRef.getStateP() != states_participant.INIT); //prüfe ob alle etwas empfangen haben und einen status gesetzt haben
+                allReceived = participantsSingleThread.stream().allMatch(participantRef -> participantRef.getStateP() != states_participant.INIT); //prÃ¼fe ob alle etwas empfangen haben und einen status gesetzt haben
             }
         }
 
@@ -123,7 +123,7 @@ public class CoordinatorThread extends Thread{
         this.participantsAllThreadUse.stream()
             .forEach(participantRef -> {sendMsgParticipant(this.uuid.toString() + " GLOBAL_COMMIT",participantRef);
                                             //try {
-                                                //this.sleep(20000); //timeout für koordinator fällt aus
+                                                //this.sleep(20000); //timeout fÃ¼r koordinator fÃ¤llt aus
                                             //} catch (InterruptedException e) {
                                             //    throw new RuntimeException(e);
                                             //}
@@ -137,7 +137,7 @@ public class CoordinatorThread extends Thread{
 
     private void receiveAck(){
         final boolean finalSendCommit = monitorDataCoCoThread.getTransaction(uuid).getStateC().equals(states_coordinator.COMMIT);
-        //prüfe ob alle etwas erhalten haben und sende gegebenenfalls nachricht bis sie es haben...
+        //prÃ¼fe ob alle etwas erhalten haben und sende gegebenenfalls nachricht bis sie es haben...
         long startTime = System.nanoTime();
         long endTime = startTime + (15 * 1000000000L); // 5 Sekunden in Nanosekunden umrechnen
         while(!(participantsSingleThread.stream().allMatch(participantRef -> participantRef.getStateP().equals(states_participant.ACK)))){
