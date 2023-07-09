@@ -82,7 +82,7 @@ public class Hotel {
                      " endDatum >= " + "'" + startDate + "'" + " AND endDatum <= " + "'" + endDate + "'" + ") ) LIMIT " + number;
         PreparedStatement ps = this.connection.prepareStatement(sql);
         int affectedRows = ps.executeUpdate();
-        /*wenn die Anzahl der zu reservierenden Zimmer der Anzahl an geupdateten Zeilen entspricht, war die Datenbankoperation erfolgreich*/
+        /*Wenn die Anzahl der zu reservierenden Autos mit der Anzahl der aktualisierten Zeilen übereinstimmt, war die Datenbankoperation erfolgreich.*/
         return affectedRows == number;
     }
 
@@ -90,7 +90,7 @@ public class Hotel {
         String sql = "UPDATE zimmer SET reserved = 0 WHERE reserved = 1";
         PreparedStatement ps = this.connection.prepareStatement(sql);
         ps.executeUpdate();
-        /*wenn es keine reservierten Zimmer mehr gibt war die Datenbankoperation erfolgreich*/
+        /*Wenn es keine reservierten Zimmer mehr gibt, war die Datenbankoperation erfolgreich*/
         return this.getReservedRooms() == 0;
     }
 
@@ -107,8 +107,8 @@ public class Hotel {
             ps = this.connection.prepareStatement(sql);
             ps.executeUpdate();
         }
-        /*wenn es keine reservierten Zimmer mehr gibt und genauso viele Buchungen,wie ursprünglich reservierte Zimmer erstellt wurden,
-        dann war die Datenbankoperation erfolgreich*/
+       /*Wenn es keine reservierten Zimmer mehr gibt und genauso viele Buchungen erstellt wurden,
+         wie ursprünglich reservierte Autos, dann war die Datenbankoperation erfolgreich.*/
         return getReservedRooms() == 0 && reservedRooms == insertCount;
     }
 
@@ -120,7 +120,7 @@ public class Hotel {
         ps = this.connection.prepareStatement(sql);
         ResultSet rs = ps.executeQuery();
         rs.next();
-       /* wenn es keine Buchungen in der Vergangenheit gibt, war die Datenbankoperation erfolgreich*/
+       /* Wenn es keine Buchungen in der Vergangenheit gibt, war die Datenbankoperation erfolgreich*/
         return rs.getInt("COUNT(*)") == 0;
     }
 

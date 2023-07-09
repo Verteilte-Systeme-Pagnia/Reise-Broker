@@ -78,7 +78,7 @@ public class Autoverleih {
                 " endDatum >= " + "'" + startDate + "'" + " AND endDatum <= " + "'" + endDate + "'" + ") ) LIMIT " + number;
         PreparedStatement ps = this.connection.prepareStatement(sql);
         int affectedRows = ps.executeUpdate();
-        /*wenn die Anzahl der zu reservierenden Autos der Anzahl an geupdateten Zeilen entspricht, war die Datenbankoperation erfolgreich*/
+        /*Wenn die Anzahl der zu reservierenden Autos mit der Anzahl der aktualisierten Zeilen übereinstimmt, war die Datenbankoperation erfolgreich.*/
         return affectedRows == number;
     }
 
@@ -86,14 +86,14 @@ public class Autoverleih {
         String sql = "UPDATE autos SET reserved = 0 WHERE reserved = 1";
         PreparedStatement ps = this.connection.prepareStatement(sql);
         ps.executeUpdate();
-        /*wenn es keine reservierten Autos mehr gibt war die Datenbankoperation erfolgreich*/
+        /*Wenn es keine reservierten Autos mehr gibt, war die Datenbankoperation erfolgreich*/
         return this.getReservedCars() == 0;
     }
 
     public boolean bookReservedCars(String startDate, String endDate) throws  SQLException{
-        int reservedRooms = getReservedCars();
+        int reservedCars = getReservedCars();
         int insertCount = 0;
-        for(int i = 0; i<reservedRooms;i++) {
+        for(int i = 0; i<reservedCars;i++) {
             String sql = "INSERT INTO buchungen (carId,startDatum,endDatum) " +
                     "VALUES((SELECT id FROM autos WHERE reserved = 1 LIMIT 1)," + "'" + startDate + "', '" + endDate + "' )";
             System.out.printf(sql);
@@ -103,9 +103,9 @@ public class Autoverleih {
             ps = this.connection.prepareStatement(sql);
             ps.executeUpdate();
         }
-        /*wenn es keine reservierten Autos mehr gibt und genauso viele Buchungen,wie ursprünglich reservierte Autos erstellt wurden,
-        dann war die Datenbankoperation erfolgreich*/
-        return getReservedCars() == 0 && reservedRooms == insertCount;
+        /*Wenn es keine reservierten Autos mehr gibt und genauso viele Buchungen erstellt wurden,
+         wie ursprünglich reservierte Autos, dann war die Datenbankoperation erfolgreich.*/
+        return getReservedCars() == 0 && reservedCars == insertCount;
     }
 
     public boolean checkOutdatedBookings() throws  SQLException{
@@ -116,7 +116,7 @@ public class Autoverleih {
         ps = this.connection.prepareStatement(sql);
         ResultSet rs = ps.executeQuery();
         rs.next();
-        /* wenn es keine Buchungen in der Vergangenheit gibt, war die Datenbankoperation erfolgreich*/
+        /* Wenn es keine Buchungen in der Vergangenheit gibt, war die Datenbankoperation erfolgreich*/
         return rs.getInt("COUNT(*)") == 0;
     }
 
