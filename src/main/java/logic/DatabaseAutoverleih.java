@@ -134,8 +134,7 @@ public class DatabaseAutoverleih {
     }
 
     public boolean checkOutdatedBookings() throws  SQLException{
-        try {
-            semaphore.acquire();
+
             try {
                 String sql = "DELETE FROM buchungen WHERE endDatum <  CURDATE()";
                 PreparedStatement ps = this.connection.prepareStatement(sql);
@@ -148,12 +147,7 @@ public class DatabaseAutoverleih {
                 return rs.getInt("COUNT(*)") == 0;
             }catch (SQLException e){
                 e.printStackTrace();
-            }finally {
-                semaphore.release();
             }
-        }catch (InterruptedException e){
-            throw new RuntimeException(e);
-        }
         return false;
     }
 

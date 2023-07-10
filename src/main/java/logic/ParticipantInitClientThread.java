@@ -1,11 +1,8 @@
 package logic;
 
-import logic.transaction.DatabaseAutoverleih;
-
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.Socket;
 
 public class ParticipantInitClientThread extends Thread{
     
@@ -30,19 +27,24 @@ public class ParticipantInitClientThread extends Thread{
          }
              
      public void run(){
-         String intData = null;
+         System.out.println("qiwondqwiodnqwidnqoiwdniwqdnoqiwdnoqwdnoqwindqiwndqwd");
+         int intData = -1;
          String receivedDp = new String(dp.getData(),0,dp.getLength());
+         String[] splitReceiveDp = receivedDp.split(" ");
+         System.out.println("vor getfree rooms");
          if(this.type.equals("Hotel")){
-             //Abfrage Hotel
+             intData = databaseHotel.getFreeRooms(splitReceiveDp[1],splitReceiveDp[2]);
              
          }else if(this.type.equals("Autoverleih")){
-             //Abfrage Autoverleih
+             intData = databaseAutoverleih.getFreeCars(splitReceiveDp[1],splitReceiveDp[2]);
          }
-        
+         System.out.println("receivedb wird gebaut");
          receivedDp = receivedDp + " " + type + " " + intData;
 
          try {
-             socket.send(new DatagramPacket(receivedDp.getBytes(),receivedDp.length()));
+             System.out.println("vor socket send");
+             socket.send(new DatagramPacket(receivedDp.getBytes(),receivedDp.length(),dp.getAddress(),dp.getPort()));
+             System.out.println("port" + dp.getPort());
          } catch (IOException e) {
              throw new RuntimeException(e);
          }

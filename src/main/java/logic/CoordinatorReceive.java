@@ -79,10 +79,11 @@ public class CoordinatorReceive {
 
                  String initializeMsg = new String(receiveDP.getData(),0,receiveDP.getLength());
 
-                 if(initializeMsg.contains("InitializeClient")) {
+                 if(initializeMsg.contains("checkAvailability")) {
                      if (participants.stream().anyMatch(participantRef -> participantRef.getAddress().equals(receiveDP.getAddress()) && participantRef.getPort() == receiveDP.getPort())) {//Nachricht von Partizipanten
+                         System.out.println(initializeMsg);
                          String[] splitInitializeMsg = initializeMsg.split(" ");
-                         SenderReference senderReference = uuidTransactionParticipantClient.get(UUID.fromString(splitInitializeMsg[1]));
+                         SenderReference senderReference = uuidTransactionParticipantClient.get(UUID.fromString(splitInitializeMsg[3]));
                          socket.send(new DatagramPacket(initializeMsg.getBytes(), initializeMsg.length(), senderReference.getSenderAddress(), senderReference.getSenderPort()));
                      }else{
                          SenderReference senderReference = new SenderReference(receiveDP.getPort(),receiveDP.getAddress());

@@ -84,12 +84,12 @@ public class ParticipantReceive {
                 //if -> from coordinator else if -> from other participant -> from a Client also ignore
                 System.out.println("logic.ParticipantReceive "+msg);
                 String[] clientmsg = msg.split(" ");
-                if(clientmsg[0].equals("InitializeClient")){
+                if(clientmsg[0].equals("checkAvailability")){
                     if(type.equals("Hotel")) {
-                        Thread sendClientInformation = new ParticipantInitClientThread(type,databaseAutoverleih, receiveDP,socket);
+                        Thread sendClientInformation = new ParticipantInitClientThread(type,databaseHotel, receiveDP,socket);
                         sendClientInformation.start();
                     }else if(type.equals("Autoverleih")){
-                        Thread sendClientInformation = new ParticipantInitClientThread(type,databaseHotel,receiveDP,socket);
+                        Thread sendClientInformation = new ParticipantInitClientThread(type,databaseAutoverleih,receiveDP,socket);
                         sendClientInformation.start();
                     }
                 }else {

@@ -7,26 +7,29 @@ public class Client {
     public static void main(String[] args) {
         DatagramSocket socket = null;
         try {
-            //Initialisierung sendet message erhält 2 receives mit hotel oder auto
+            //Verfügbarkeit überprüfen
             socket = new DatagramSocket(Config.ClientPort);
             //case initialize
-            byte[] msg = "InitializeClient".getBytes(); //Room autos fromdate todate
+            byte[] msg = "checkAvailability 2002-03-03 2025-01-01".getBytes(); //Room autos fromdate todate
             DatagramPacket sendDP = new DatagramPacket(msg,0,msg.length,InetAddress.getByName("localhost"),Config.Coordinator1Port);
             socket.send(sendDP);
 
-            byte[] puffer = new byte[65507];
-            DatagramPacket receiveDP = new DatagramPacket(puffer, puffer.length);
-            socket.receive(receiveDP); // hotel oder auto
+            byte[] puffer1 = new byte[65507];
+            DatagramPacket receiveDP1 = new DatagramPacket(puffer1, puffer1.length);
+            socket.receive(receiveDP1);
 
-            String message = new String(receiveDP.getData(),0,receiveDP.getLength());
-
-            System.out.println(message);
-
-            socket.receive(receiveDP); //Hotel oder auto
-
-             message = new String(receiveDP.getData(),0,receiveDP.getLength());
+            String message = new String(receiveDP1.getData(),0,receiveDP1.getLength());
 
             System.out.println(message);
+
+            byte[] puffer2 = new byte[65507];
+            DatagramPacket receiveDP2 = new DatagramPacket(puffer2, puffer2.length);
+            socket.receive(receiveDP2);
+
+            message = new String(receiveDP2.getData(),0,receiveDP2.getLength());
+            System.out.println(message);
+
+            //das fürs buchen
 
             /**case button buchen is pressed
             byte[] msg = "5 4 2002-03-03 2025-01-01 Booked".getBytes(); //Room autos fromdate todate

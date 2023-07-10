@@ -3,7 +3,6 @@ package logic;
 import logic.transaction.*;
 import java.io.*;
 import java.net.*;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.*;
 
