@@ -39,11 +39,9 @@ public class DatabaseHotel {
         return -1;
     }
 
-    public int getReservedRooms()  {
-        try {
-            semaphore.acquire();
+    public int getReservedRooms(String transactionId)  {
             try {
-                String sql = "SELECT COUNT(*) FROM zimmer WHERE reserved = 1";
+                String sql = "SELECT COUNT(*) FROM zimmer WHERE reserved = 1 AND transactionId = " + transactionId;
                 PreparedStatement ps = this.connection.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery();
                 rs.next();
@@ -51,12 +49,7 @@ public class DatabaseHotel {
 
             }catch(SQLException e){
                 e.printStackTrace();
-            }finally {
-                semaphore.release();
             }
-        }catch(InterruptedException e){
-            throw new RuntimeException(e);
-        }
         return -1;
         }
 
@@ -87,22 +80,15 @@ public class DatabaseHotel {
     }
 
     public  boolean cancelReservation(String transactionId) {
-        try{
-            semaphore.acquire();
             try {
                 String sql = "UPDATE zimmer SET reserved = 0 WHERE reserved = 1 AND transactionId = " + transactionId;
                 PreparedStatement ps = this.connection.prepareStatement(sql);
                 ps.executeUpdate();
                 /*Wenn es keine reservierten Zimmer mehr gibt, war die Datenbankoperation erfolgreich*/
-                return this.getReservedRooms() == 0;
+                return this.getReservedRooms(transactionId) == 0;
             }catch(SQLException e){
                 e.printStackTrace();
-            }finally {
-                semaphore.release();
             }
-        }catch(InterruptedException e){
-            throw new RuntimeException(e);
-        }
         return false;
     }
 
@@ -110,7 +96,7 @@ public class DatabaseHotel {
         try {
             semaphore.acquire();
             try {
-                int reservedRooms = getReservedRooms();
+                int reservedRooms = getReservedRooms(transactionId);
                 int insertCount = 0;
                 for (int i = 0; i < reservedRooms; i++) {
                     String sql = "INSERT INTO buchungen (roomId,startDatum,endDatum) " +
@@ -122,7 +108,7 @@ public class DatabaseHotel {
                     ps.executeUpdate();
                     /*Wenn es keine reservierten Zimmer mehr gibt und genauso viele Buchungen erstellt wurden,
                     wie ursprünglich reservierte Autos, dann war die Datenbankoperation erfolgreich.*/
-                    return getReservedRooms() == 0 && reservedRooms == insertCount;
+                    return getReservedRooms(transactionId) == 0 && reservedRooms == insertCount;
                 }
             }catch (SQLException e){
                 e.printStackTrace();
@@ -135,7 +121,7 @@ public class DatabaseHotel {
         return false;
     }
 
-    public boolean checkOutdatedBookings() throws  SQLException{
+    public boolean checkOutdatedBookings(){
             try {
                 String sql = "DELETE FROM buchungen WHERE endDatum <  CURDATE()";
                 PreparedStatement ps = this.connection.prepareStatement(sql);

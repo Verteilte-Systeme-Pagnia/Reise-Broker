@@ -38,23 +38,16 @@ public class DatabaseAutoverleih {
         return -1;
     }
 
-    public int getReservedCars() {
+    public int getReservedCars(String transactionId) {
         try {
-            semaphore.acquire();
-            try {
-                String sql = "SELECT COUNT(*) FROM autos WHERE reserved = 1";
-                PreparedStatement ps = this.connection.prepareStatement(sql);
-                ResultSet rs = ps.executeQuery();
-                rs.next();
-                return rs.getInt("COUNT(*)");
-            }catch (SQLException e){
+            String sql = "SELECT COUNT(*) FROM autos WHERE reserved = 1 AND transactionId = " + transactionId;
+            PreparedStatement ps = this.connection.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+            rs.next();
+            return rs.getInt("COUNT(*)");
+        }catch (SQLException e){
                 e.printStackTrace();
-            }finally {
-                semaphore.release();
             }
-        }catch(InterruptedException e){
-            throw new RuntimeException(e);
-        }
         return -1;
     }
 
@@ -71,8 +64,6 @@ public class DatabaseAutoverleih {
                     cancelReservation(transactionId);
                     return false;
                 }
-                /*Wenn die Anzahl der zu reservierenden Autos mit der Anzahl der aktualisierten Zeilen übereinstimmt, war die Datenbankoperation erfolgreich.*/
-
             }catch(SQLException e ){
                 e.printStackTrace();
             }finally{
@@ -85,22 +76,15 @@ public class DatabaseAutoverleih {
     }
 
     public boolean cancelReservation(String transactionId) {
-        try {
-            semaphore.acquire();
             try {
                 String sql = "UPDATE autos SET reserved = 0 WHERE reserved = 1 AND transactionId = " + transactionId;
                 PreparedStatement ps = this.connection.prepareStatement(sql);
                 ps.executeUpdate();
                 /*Wenn es keine reservierten Autos mehr gibt, war die Datenbankoperation erfolgreich*/
-                return this.getReservedCars() == 0;
+                return this.getReservedCars(transactionId) == 0;
             }catch(SQLException e){
                 e.printStackTrace();
-            }finally {
-                semaphore.release();
             }
-        }catch(InterruptedException e ){
-            throw new RuntimeException(e);
-        }
         return false;
     }
 
@@ -108,7 +92,7 @@ public class DatabaseAutoverleih {
         try {
             semaphore.acquire();
             try {
-                int reservedCars = getReservedCars();
+                int reservedCars = getReservedCars(transactioniD);
                 int insertCount = 0;
                 for (int i = 0; i < reservedCars; i++) {
                     String sql = "INSERT INTO buchungen (carId,startDatum,endDatum) " +
@@ -121,7 +105,7 @@ public class DatabaseAutoverleih {
                 }
                 /*Wenn es keine reservierten Autos mehr gibt und genauso viele Buchungen erstellt wurden,
                 wie ursprünglich reservierte Autos, dann war die Datenbankoperation erfolgreich.*/
-                return getReservedCars() == 0 && reservedCars == insertCount;
+                return getReservedCars(transactioniD) == 0 && reservedCars == insertCount;
             }catch(SQLException e){
                 e.printStackTrace();
             }finally {
@@ -133,7 +117,7 @@ public class DatabaseAutoverleih {
         return false;
     }
 
-    public boolean checkOutdatedBookings() throws  SQLException{
+    public boolean checkOutdatedBookings(){
 
             try {
                 String sql = "DELETE FROM buchungen WHERE endDatum <  CURDATE()";
