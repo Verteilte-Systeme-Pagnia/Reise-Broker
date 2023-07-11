@@ -1,0 +1,1 @@
+INSERT INTO zimmer (reserved) VALUES((false),(false),(false),(false),(false),(false),(false),(false),(false),(false))
