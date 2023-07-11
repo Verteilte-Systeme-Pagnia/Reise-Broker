@@ -8,7 +8,7 @@ transactionId VARCHAR(36)
 
 CREATE TABLE buchungen (
 id INT PRIMARY KEY AUTO_INCREMENT,
-cardId INT,
+carId INT,
 startDatum DATE,
 endDatum Date,
 FOREIGN KEY (carId) REFERENCES autos(id)
