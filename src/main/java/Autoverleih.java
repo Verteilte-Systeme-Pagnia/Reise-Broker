@@ -5,7 +5,6 @@ import logic.ParticipantRef;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.sql.*;
 import java.util.ArrayList;
 
 public class Autoverleih {
@@ -15,12 +14,12 @@ public class Autoverleih {
         try{
             ArrayList<CoordinatorRef> coordinatorRefs = new ArrayList<>();
 
-            coordinatorRefs.add(new CoordinatorRef(InetAddress.getByName("localhost"), Config.Coordinator1Port));
-            coordinatorRefs.add(new CoordinatorRef(InetAddress.getByName("localhost"),Config.Coordinator2Port));
+            coordinatorRefs.add(new CoordinatorRef(InetAddress.getByName("localhost"), Config.Coordinator1Port));//referenz für broker1
+            coordinatorRefs.add(new CoordinatorRef(InetAddress.getByName("localhost"),Config.Coordinator2Port));//referenz für broker2
 
             ArrayList<ParticipantRef> participantRefs = new ArrayList<>();
 
-            participantRefs.add(new ParticipantRef(InetAddress.getByName("localhost"),Config.Participant1Port));
+            participantRefs.add(new ParticipantRef(InetAddress.getByName("localhost"),Config.Participant2Port));//referenz für Hotel
 
             ParticipantReceive participantHotel = new ParticipantReceive(coordinatorRefs,participantRefs,"LogFileParticipant1.txt");
             participantHotel.initialize(Config.Participant1Port, "Autoverleih");

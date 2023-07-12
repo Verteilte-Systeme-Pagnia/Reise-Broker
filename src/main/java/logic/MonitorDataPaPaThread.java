@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class MonitorDataPaPaThread { //Daten zwischen partizipant receive und partizipantThread
+public class MonitorDataPaPaThread { //verwaltung gemeinsamer Datenstrukturen zwischen zwischen partizipantreceive und partizipantThread
     private Map<UUID, TransactionParticipant> uuidTransactionParticipantMap;
     
     public MonitorDataPaPaThread(){

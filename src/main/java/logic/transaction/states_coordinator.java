@@ -1,6 +1,6 @@
 package logic.transaction;
 
-public enum states_coordinator {
+public enum states_coordinator {//
     INIT,
     WAIT,
     COMMIT,
