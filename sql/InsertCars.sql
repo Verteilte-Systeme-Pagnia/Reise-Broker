@@ -1,1 +1,1 @@
-INSERT INTO autos (reserved) VALUES((false),(false),(false),(false),(false),(false),(false),(false),(false),(false))
+INSERT INTO autos (reserved) VALUES(false),(false),(false),(false),(false),(false),(false),(false),(false),(false)
