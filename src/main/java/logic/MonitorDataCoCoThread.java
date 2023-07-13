@@ -3,7 +3,7 @@ package logic;
 import logic.transaction.*;
 
 import java.util.*;
-public class MonitorDataCoCoThread{
+public class MonitorDataCoCoThread{//verwaltet den Zugriff für die gemeinsame Datenstruktur zwischen Coordinator Receive und CoordinatorThread
     private Map<UUID, TransactionCoordinator> uuidTransactionCoordinatorMap;
     private int ctrAdd = 0;
     private int ctrRM = 0;

@@ -8,7 +8,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.UUID;
 
-public class ParticipantHelperThread extends Thread{
+public class ParticipantHelperThread extends Thread{//wird von Participant Receive erzeugt und existiert einmalig
     private MonitorDataPaPaHeThread monitorDataPaPaHeThread;
     private DatagramSocket socket;
     private WriteLogFile writeLogFile;
@@ -20,16 +20,18 @@ public class ParticipantHelperThread extends Thread{
     }
 
     public void run() {
+        System.out.println("PartizipantHelperThread wurde gestartet");
         while(true){
-            if(monitorDataPaPaHeThread.getDatagramPacketRequestingParticipant() != null){
+            if(monitorDataPaPaHeThread.getDatagramPacketRequestingParticipant() != null){//schaut ob ein datagrampacket für ihn abgelegt wurde wenn nicht == null
+                System.out.println("PartizipantHelperThread hat Paket erhalten");
                 try {
-                    DatagramPacket tempDatagrampacket = monitorDataPaPaHeThread.getDatagramPacketRequestingParticipant();
-                    monitorDataPaPaHeThread.setDatagramPacketRequestingParticipant(null);
-                    String lastRecordedState = this.writeLogFile.readLastRecordedState(UUID.fromString(new String(tempDatagrampacket.getData(), 0, tempDatagrampacket.getLength()).split(" ")[0]));
-                    if (lastRecordedState.equals("ABORT")) {
+                    DatagramPacket tempDatagrampacket = monitorDataPaPaHeThread.getDatagramPacketRequestingParticipant(); //holen des Datagrampackets
+                    monitorDataPaPaHeThread.setDatagramPacketRequestingParticipant(null);//setzen des Datagrampackets auf null sodass der koordinator receive ein neues hereinlegen kann
+                    String lastRecordedState = this.writeLogFile.readLastRecordedState(UUID.fromString(new String(tempDatagrampacket.getData(), 0, tempDatagrampacket.getLength()).split(" ")[0])); //holt den letzten String/line in der logfile von der uuid alle haben die gleiche uuid
+                    if (lastRecordedState.equals("ABORT")) {//entsprechend zum 2PC von Tannenbaum wird ein Global abort bei einem abort versendet
                         lastRecordedState = "GLOBAL_ABORT";
                     }
-                    else if (lastRecordedState.equals("COMMIT")) {
+                    else if (lastRecordedState.equals("COMMIT")) {//sendet ein global commit, da bereits vom koordinator bereits ein global commit erhalten wurde
                         lastRecordedState = "GLOBAL_COMMIT";
                     }
                     else if (lastRecordedState.equals("INIT")) {

@@ -1,13 +1,13 @@
 package logic.transaction;
 
-public class TransactionCoordinator extends Transaction {
-    private states_coordinator stateC;
-    public SenderReference senderReference;
-    public String finalResult;
-    public int rooms;
-    public int autos;
-    public String fromDate;
-    public String toDate;
+public class TransactionCoordinator extends Transaction {//erbt von Transaction
+    private states_coordinator stateC; //Speicherung des Status der transaktion für den Koordinator
+    public SenderReference senderReference; //Speicherung der Sender Reference
+    public String finalResult; //Speicherung der Endentscheidung falls der Koordinator ausfällt
+    public int rooms; //speicherung der Anzahl der Räume
+    public int autos; //Speicherung der anzahl der Autos die gebucht werden für die transaktion
+    public String fromDate; //Speicherung von welchem Tag diese gespeichert werden
+    public String toDate; //Speicherung bis zu welchem Tag die Transaktion durchgrführt werden soll
 
     public TransactionCoordinator(SenderReference senderReference, int rooms, int autos, String fromDate,String toDate){
         super();

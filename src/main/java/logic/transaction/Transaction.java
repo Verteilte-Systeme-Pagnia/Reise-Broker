@@ -2,10 +2,10 @@
 package logic.transaction;
 import java.net.DatagramPacket;
 import java.util.*;
-public class Transaction {
-    public SenderReference senderReference;
-    private UUID uuid;
-    private DatagramPacket datagramPacket;
+public class Transaction { //Transaktion klasse darin werden Informationen für die jeweilige Transaktion gespeichert bildet Oberklasse für Transaction Participant und Transaction coordinator
+    public SenderReference senderReference;//speicherung einer sender reference
+    private UUID uuid;//speicherung einer UUID für die Transaktion
+    private DatagramPacket datagramPacket; //speicherung von datagrampackets das zu behandeln ist für die Transaktion
 
     public Transaction(){
         this.uuid = uuid.randomUUID();

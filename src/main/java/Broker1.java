@@ -10,8 +10,8 @@ public class Broker1 {
         try {
             // Beispielverwendung der Klasse TwoPhaseCommitProtocol
             ArrayList<ParticipantRef> participants = new ArrayList<ParticipantRef>();
-            ParticipantRef autoParticipant = new ParticipantRef(InetAddress.getByName("localhost"), Config.Participant1Port);
-            ParticipantRef hotelParticipant = new ParticipantRef(InetAddress.getByName("localhost"),Config.Participant2Port);
+            ParticipantRef autoParticipant = new ParticipantRef(InetAddress.getByName("localhost"), Config.Participant1Port);//Referenz für Autoverleih
+            ParticipantRef hotelParticipant = new ParticipantRef(InetAddress.getByName("localhost"),Config.Participant2Port);//referenz für Hotel
             participants.add(autoParticipant);
             participants.add(hotelParticipant);
 
