@@ -7,9 +7,12 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.util.Random;
 
 public class Client {
     DatagramSocket socket;
+    Random random = new Random();
+    int randomInt;
     public Client(){
         try {
             socket = new DatagramSocket(Config.ClientPort);
@@ -18,11 +21,17 @@ public class Client {
         }
     }
     public String[] checkAvailability(String dateFrom, String dateTo){
+        randomInt = random.nextInt(1);
         String hotelResponse;
         String carResponse;
         try{
             byte[] msg = ("checkAvailability " + dateFrom + " " + dateTo).getBytes();
-            DatagramPacket sendDP = new DatagramPacket(msg,0,msg.length,InetAddress.getByName("localhost"), Config.Coordinator1Port);
+            DatagramPacket sendDP;
+            if(randomInt == 0){
+                sendDP = new DatagramPacket(msg, 0, msg.length, InetAddress.getByName("localhost"), Config.Coordinator1Port);
+            } else {
+                sendDP = new DatagramPacket(msg, 0, msg.length, InetAddress.getByName("localhost"), Config.Coordinator2Port);
+            }
             socket.send(sendDP);
 
             byte[] puffer1 = new byte[65507];
@@ -41,19 +50,21 @@ public class Client {
     }
 
     public String book(String dateFrom, String dateTo, int nRooms, int nCars){
+        randomInt = random.nextInt(1);
         String response;
         try {
             byte[] msg = (nRooms + " " + nCars + " " + dateFrom + " " + dateTo + " Booked").getBytes();
-            DatagramPacket sendDP = new DatagramPacket(msg,0,msg.length,InetAddress.getByName("localhost"), Config.Coordinator1Port);
+            DatagramPacket sendDP;
+            if(randomInt == 0){
+                sendDP = new DatagramPacket(msg, 0, msg.length, InetAddress.getByName("localhost"), Config.Coordinator1Port);
+            } else {
+                sendDP = new DatagramPacket(msg, 0, msg.length, InetAddress.getByName("localhost"), Config.Coordinator2Port);
+            }
             socket.send(sendDP);
 
             byte[] puffer = new byte[65507];
             DatagramPacket receiveDP = new DatagramPacket(puffer, puffer.length);
             socket.receive(receiveDP);
-            String result = new String(receiveDP.getData(),0,receiveDP.getLength());
-            //Booking-Error => Buchung fehlgeschlagen
-            //Successfully-Booked => Buchung erfolgreich
-
             response = new String(receiveDP.getData(),0,receiveDP.getLength());
         } catch (IOException e) {
             throw new RuntimeException(e);

@@ -99,9 +99,9 @@ public class ParticipantThread extends Thread {
                     vote_request = true;
                     System.out.println("ParticipantThread: " + uuid + " VOTE_REQUEST erhalten");
 
-                    //if(type.equals("Hotel")){
-                    //   System.exit(0); //fehlerfall1: Partizipant fällt in der 1. Phase aus
-                    //}
+                    /*if(type.equals("Hotel")){
+                       System.exit(0); //fehlerfall1: Partizipant fällt in der 1. Phase aus
+                    }*/
                 }
             }
         }

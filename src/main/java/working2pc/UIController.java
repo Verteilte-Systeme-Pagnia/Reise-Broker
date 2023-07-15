@@ -199,10 +199,20 @@ public class UIController {
     }
 
     private void book() {
-        client.book((String)shoppingCart[0], (String)shoppingCart[1], (int)shoppingCart[2], (int)shoppingCart[3]);
+        String response = client.book(
+                (String)shoppingCart[0],
+                (String)shoppingCart[1],
+                (int)shoppingCart[2],
+                (int)shoppingCart[3]
+        );
 
-        JOptionPane.showMessageDialog(frame, "Herzlichen Dank für ihre Buchung bei den Pagnia Piranhas.");
-        buttonSection.getBookButton().setEnabled(false);
+        if(response.equals("Booking-Error")){
+            JOptionPane.showMessageDialog(frame, "Buchung fehlgeschlagen. Die Pagnia Piranhas bitten um Entschuldigung.");
+            buttonSection.getBookButton().setEnabled(false);
+        } else if (response.equals("Successfully-Booked")){
+            JOptionPane.showMessageDialog(frame, "Buchung erfolgreich. Die Pagnia Piranhas wünschen viel Spaß!");
+            buttonSection.getBookButton().setEnabled(false);
+        }
     }
 
     public void show() {
