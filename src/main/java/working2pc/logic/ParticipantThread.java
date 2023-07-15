@@ -58,7 +58,7 @@ public class ParticipantThread extends Thread {
     }//die initialize Methode wird bei jedem Thread aufgerufen
 
     private void initialize() { //In der Methode wird geschaut, welchen Zustand der ParticipantThread zurzeit hat und dementsprechend verschiedene Methoden ausgeführt
-        while (this.monitorDataPaPaThread.getTransaction(uuid).getStateP() != states_participant.Finish) { //wenn der Thread noch nicht fertig ist läuft die Abfrage, welchen Zustand der ParticipantThread zurzeit hat
+        while (this.monitorDataPaPaThread.getTransaction(uuid).getStateP() != states_participant.FINISH) { //wenn der Thread noch nicht fertig ist läuft die Abfrage, welchen Zustand der ParticipantThread zurzeit hat
             switch (this.monitorDataPaPaThread.getTransaction(uuid).getStateP()) { //Abfrage des Zustands des ParticipantThreads über den Monitor
                 case INIT:
                     stateInit();
@@ -75,7 +75,7 @@ public class ParticipantThread extends Thread {
                 case ACK:
                     ackGlobalMsg();
                     break;
-                case Finish:    
+                case FINISH:    
             }
         }
     }
@@ -99,9 +99,9 @@ public class ParticipantThread extends Thread {
                     vote_request = true;
                     System.out.println("ParticipantThread: " + uuid + " VOTE_REQUEST erhalten");
 
-                    /*if(type.equals("Hotel")){
-                       System.exit(0); //fehlerfall1: Partizipant fällt in der 1. Phase aus
-                    }*/
+                    //if(type.equals("Hotel")){
+                    //   System.exit(0); //fehlerfall1: Partizipant fällt in der 1. Phase aus
+                    //}
                 }
             }
         }
@@ -142,7 +142,7 @@ public class ParticipantThread extends Thread {
         while (!receivedMsg) { //solange noch keine Nachricht angekommen ist
             DatagramPacket tempDatagramPacket = this.monitorDataPaPaThread.getTransaction(uuid).getDatagramPacket();
             if(System.nanoTime() > endTime){ //falls die bestimmte Zeit zum Empfangen der Antwort des Koordinators abgelaufen ist
-                this.participantRefs.stream().forEach(participantRef ->  {sendMsgParticipant(" DESICION_REQUEST",participantRef.getAddress(),participantRef.getPort());}); //sende DECISION_REQUEST an den anderen Partizipanten
+                this.participantRefs.stream().forEach(participantRef ->  {sendMsgParticipant(" DECISION_REQUEST",participantRef.getAddress(),participantRef.getPort());}); //sende DECISION_REQUEST an den anderen Partizipanten
                 System.out.println("ParticipantThread: " + uuid + " DECISION_REQUEST gesendet");
                 expectParticipantToo = true; //Nachricht vom anderen Partizipanten wird jetzt neben Nachricht vom Koordinator auch erwartet
                  startTime = System.nanoTime();
@@ -226,7 +226,7 @@ public class ParticipantThread extends Thread {
     private void ackGlobalMsg() { //Methode für den Zustand ACK des ParticipantThreads
         sendMsgCoordinator(" ACK"); //ACK wird an den Koordinator gesendet
         System.out.println("ParticipantThread: " + uuid + " ACK gesendet");
-        monitorDataPaPaThread.setTransactionStatus(this.uuid, states_participant.Finish); //Zustand des Partizipanten wird auf FINISH gesetzt
+        monitorDataPaPaThread.setTransactionStatus(this.uuid, states_participant.FINISH); //Zustand des Partizipanten wird auf FINISH gesetzt
         writeLogFileMonitor.writeToFileParticipantExtra(monitorDataPaPaThread.getTransaction(this.uuid));
         System.out.println("ParticipantThread: " + uuid + " Festlegen des FINISH Zustands");
     }

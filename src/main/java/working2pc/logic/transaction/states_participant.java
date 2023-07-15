@@ -7,5 +7,5 @@ public enum states_participant {
     ABORT,
     ACK, //von jonas hinzugefügt um zu bestätigen, dass der Participant das commit oder das abort erhalten hat
     
-    Finish
+    FINISH
 }

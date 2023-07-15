@@ -62,7 +62,6 @@ public class DatabaseHotel {
                         "(SELECT roomId FROM buchungen WHERE (startDatum >= " + "'" + startDate + "'" + " AND startDatum <=  " + "'" + endDate + "'" + ") OR (" +
                         " endDatum >= " + "'" + startDate + "'" + " AND endDatum <= " + "'" + endDate + "'" + ") ) LIMIT " + number;
                 PreparedStatement ps = this.connection.prepareStatement(sql);
-                System.out.println(sql);
                 int affectedRows = ps.executeUpdate();
                 if (affectedRows != number) {
                     cancelReservation(transactionId);

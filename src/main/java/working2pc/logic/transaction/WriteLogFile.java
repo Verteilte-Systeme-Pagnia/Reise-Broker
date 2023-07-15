@@ -103,11 +103,9 @@ public class WriteLogFile {//schreiben um in Log File zu speichern
                 String line;
                 while ((line = bufferedReader.readLine()) != null) {
                     String tempLine[] = line.split(" ");
-                    System.out.println(tempLine[0] + uuid.toString()+tempLine[0].equals(uuid.toString()));
                     if (tempLine[0].equals(uuid.toString())) {
-                        if (!(tempLine[1].equals("ACK") || tempLine[1].equals("Finish"))) {
+                        if (!(tempLine[1].equals("ACK") || tempLine[1].equals("FINISH"))) {
                             lastRecordedState = line;
-                            System.out.println(lastRecordedState);
                         }
                     }
                 }
