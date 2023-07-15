@@ -6,5 +6,5 @@ public enum states_coordinator {//
     COMMIT,
     ABORT,
     SENDCLIENT,
-    Finish
+    FINISH
 }

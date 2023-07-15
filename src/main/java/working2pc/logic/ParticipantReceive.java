@@ -102,9 +102,7 @@ public class ParticipantReceive {
                 System.out.println("ParticipantReceive empfangene Nachricht: "+msg);
                 //if -> from coordinator else if -> from other participant -> from a working2pc.Client also ignore
                 String[] clientmsg = msg.split(" ");
-                System.out.println("ParticipantReceive Überprüfung der Nachricht CheckAvailability");
                 if(clientmsg[0].equals("checkAvailability")){//prüfen auf Verfügbarkeitsanfrage
-                    System.out.println("ParticipantReceive checkAvailability");
                     if(type.equals("Hotel")) {//wenn von Hotel
                         System.out.println("ParticipantReceive checkAvailability Hotel");
                         //erzeugen eines ParicipantInitClientThread um Verfügbarkeitsinformationen an den absender zurückzusenden(Koordinator)
@@ -117,16 +115,14 @@ public class ParticipantReceive {
                         sendClientInformation.start();
                     }
                 }else {//wenn keine Verfügbarkeitsanfrage
-                    System.out.println("ParticipantReceive kein checkAvailability");
                     if (this.coordinatorRefs.stream().anyMatch(coordinatorRef -> coordinatorRef.getAddress().equals(receiveDP.getAddress()) && coordinatorRef.getPort() == receiveDP.getPort())) {//überpfung ob nachricht von Koordinator stammt
-                        System.out.println("ParticipantReceive kein checkAvailability von Koordinator");
+                        System.out.println("ParticipantReceive Nachricht vom Koordinator empfangen");
                         String[] splitMSG = msg.split(" ");//Aufbau von Koordinator: UUID MSG ...
-                        if(((splitMSG[1].equals("GLOBAL_ABORT") || splitMSG[1].equals("GLOBAL_COMMIT"))&& this.monitorDataPaPaThread.getTransaction(UUID.fromString(splitMSG[0])).getStateP().equals(states_participant.Finish))){
+                        if(((splitMSG[1].equals("GLOBAL_ABORT") || splitMSG[1].equals("GLOBAL_COMMIT"))&& this.monitorDataPaPaThread.getTransaction(UUID.fromString(splitMSG[0])).getStateP().equals(states_participant.FINISH))){
                             String message = splitMSG[0] + " ACK";
                             socket.send(new DatagramPacket(message.getBytes(),message.getBytes().length,receiveDP.getAddress(),receiveDP.getPort()));
                         }else{
                             if (this.monitorDataPaPaThread.getTransaction(UUID.fromString(splitMSG[0])) == null) {//nicht in liste bereits enthalten?
-                                System.out.println("ParticipantReceive kein checkAvailability von Koordinator nicht in liste enthalten");
                                 TransactionParticipant transactionParticipant = new TransactionParticipant(new SenderReference(receiveDP.getPort(), receiveDP.getAddress()), Integer.parseInt(splitMSG[2]), Integer.parseInt(splitMSG[3]), splitMSG[4], splitMSG[5]);//erzeugung einer Transaktion
                                 transactionParticipant.setUUID(UUID.fromString(splitMSG[0]));
                                 transactionParticipant.setDatagramPacket(receiveDP);//festlegung datagrampaket
@@ -142,9 +138,7 @@ public class ParticipantReceive {
                                     Thread participantThread = new ParticipantThread(UUID.fromString(splitMSG[0]), this.monitorDataPaPaThread, this.writeLogFileMonitor, socket, this.participantRefs, type, databaseAutoverleih);
                                     participantThread.start();
                                 }
-                                System.out.println("working2pc.logic.ParticipantReceive startet einen neuen Thread");
                             } else {// uuid in liste enthalten
-                                System.out.println("ParticipantReceive kein checkAvailability von Koordinator in liste enthalten");
                                 //lege neues Datagrampacket packet hinein
                                 while (this.monitorDataPaPaThread.getTransaction(UUID.fromString(splitMSG[0])).getDatagramPacket() != null) {
                                     //warte bis Paket von Thread entnommen wurde
@@ -154,21 +148,19 @@ public class ParticipantReceive {
                             }
                         }
                     } else if (this.participantRefs.stream().anyMatch(participantRef -> participantRef.getAddress().equals(receiveDP.getAddress()) && participantRef.getPort() == receiveDP.getPort())) {//nachricht von Partizipant
-                        System.out.println("ParticipantReceive kein checkAvailability Nachricht von Partizipant");
+                        System.out.println("ParticipantReceive Nachricht vom Partizipant empfangen");
                         //gib dies dem participanthelper thread dieser schickt nachricht an den nachfrager thread
                         String[] splitMSG = msg.split(" ");//Aufbau von Partizipanten: UUID MSG ...
                         System.out.println(splitMSG[0]);
-                        if (splitMSG[1].equals("DESICION_REQUEST")) {//Nachfrage eines anderen Partizipanten
-                            System.out.println("ParticipantReceive kein checkAvailability Nachricht von Partizipant mit desicion Request");
+                        if (splitMSG[1].equals("DECISION_REQUEST")) {//Nachfrage eines anderen Partizipanten
+                            System.out.println("ParticipantReceive DECISION_REQUEST erhalten");
                             while (this.monitorDataPaPaHeThread.getDatagramPacketRequestingParticipant() != null) {
                                 //warte bis Paket von Thread entnommen wurde
                             }
                             this.monitorDataPaPaHeThread.setDatagramPacketRequestingParticipant(receiveDP);
-                            System.out.println("ParticipantReceive kein checkAvailability Nachricht von Partizipant mit desicion Request DP abgelegt");
                         } else {//antwort auf selbst gesendete Nachricht
-                            System.out.println(UUID.fromString(splitMSG[0]));
                             this.monitorDataPaPaThread.getTransaction(UUID.fromString(splitMSG[0])).setDatagramPacket(receiveDP);
-                            System.out.println("ParticipantReceive kein checkAvailability Nachricht von Partizipant Antwort auf selbst gesendeten desicion Request Datagrampacket abgelegt");
+                            System.out.println("ParticipantReceive Antwort vom DECISION_REQUEST erhalten");
                         }
                     } else {
                         //ignorieren irgendein anderer client

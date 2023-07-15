@@ -19,7 +19,7 @@ public class CoordinatorReceive {
     private ArrayList<ParticipantRef> participants; // Liste der Partizipanten die bekannt sind. dies sind nur referenzen und keine direkten objekte von Partizipant
     private WriteLogFile writeLogFileMonitor; //um in Log file zu schreiben
     private String logFileName; //name der logfile
-    private Map<UUID, SenderReference> uuidTransactionParticipantClient; //darin wird eine uuid sowie eine senderreference des clients gespeichert bei verfügbarkeitsanfragen
+    private Map<UUID, SenderReference> uuidTransactionParticipantClient; //darin wird eine uuid sowie eine senderreference des Clients gespeichert bei verfügbarkeitsanfragen
 
     public CoordinatorReceive(ArrayList<ParticipantRef> participants, String logFileName) {
         this.writeLogFileMonitor = new WriteLogFile(logFileName);
@@ -65,14 +65,14 @@ public class CoordinatorReceive {
                     }
                 }
             }
-            System.out.println("CoordinatorReceive Auslesen und Initialiserung abgeshlossen");
-            System.out.println("CoordinatorReceive Starten der Transaktionsthreads -> CoordinatorThread");
+            System.out.println("CoordinatorReceive Auslesen und Initialiserung abgeschlossen");
             for (Map.Entry<UUID, TransactionCoordinator> entry : this.monitorDataCoCoThread.getUuidTransactionCoordinatorMap().entrySet()) {//holen der map mit sämtlichen Transaktionen um Threads dafür zu erzeugen
                 UUID key = entry.getKey();
                 Thread coordinatorThread = new CoordinatorThread(key,this.monitorDataCoCoThread,this.writeLogFileMonitor,this.participants,socket); //erzeugung des Threads welcher das 2pC weiter ausführt
                 coordinatorThread.start();
+                System.out.println("CoordinatorReceive ausgelesener CoordinatorThread wurde gestartet");
             }
-            System.out.println("CoordinatorReceive Transaktionsthreads wurden gestartet -> CoordinatorThread");
+
 
             while(true){
                  byte[] buffer = new byte[65507];
@@ -82,16 +82,14 @@ public class CoordinatorReceive {
                  System.out.println("DP empfangen");
                  String initializeMsg = new String(receiveDP.getData(),0,receiveDP.getLength());//umwnadeln des Datagrampackets in einen String
                  System.out.println("CoordinatorReceive Erhaltene Nachricht: "+initializeMsg);
-                System.out.println("CoordinatorReceive Prüfen Nachrichten typ");
                  if(initializeMsg.contains("checkAvailability")) {//prüfen ob es sich um eine Verfügbarkeitsanfrage handelt wenn ja...
-                     System.out.println("CoordinatorReceive Prüfen Nachrichten typ CheckAvailability");
                      if (participants.stream().anyMatch(participantRef -> participantRef.getAddress().equals(receiveDP.getAddress()) && participantRef.getPort() == receiveDP.getPort())) {//Prüfen ob Nachricht von einem Partizipanten stammt wenn ja...
-                         System.out.println("CoordinatorReceive Prüfen Nachrichten typ CheckAvailability von Partizipant");
+                         System.out.println("CoordinatorReceive Ergebnis von CheckAvailability wird an den Client gesendet");
                          String[] splitInitializeMsg = initializeMsg.split(" ");//aufsplitten einer Nachricht
-                         SenderReference senderReference = uuidTransactionParticipantClient.get(UUID.fromString(splitInitializeMsg[3])); //erhalten der Cleint Reference um die Verfügbarkeitsanfrage an den working2pc.Client zurückzusenden mit den Informationen die vom Partizipanten erhalten wurden
+                         SenderReference senderReference = uuidTransactionParticipantClient.get(UUID.fromString(splitInitializeMsg[3])); //erhalten der Client Reference um die Verfügbarkeitsanfrage an den Client zurückzusenden mit den Informationen die vom Partizipanten erhalten wurden
                          socket.send(new DatagramPacket(initializeMsg.getBytes(), initializeMsg.length(), senderReference.getSenderAddress(), senderReference.getSenderPort()));
                      }else{//falls nachricht nicht von einem partipanten stammt muss es sich um eine nachricht eines Clients handeln -> neue Verfügbarkeitsanfrage
-                         System.out.println("CoordinatorReceive Prüfen Nachrichten typ CheckAvailability kein Partizipant");
+                         System.out.println("CoordinatorReceive CheckAvailability vom Client erhalten");
                          SenderReference senderReference = new SenderReference(receiveDP.getPort(),receiveDP.getAddress());//speichern ser senderreference -> die des clients
                          UUID tempUUID = UUID.randomUUID(); //erzeugen einer uuid um eine empfangene nachricht wieder zuordnen zu können
                          uuidTransactionParticipantClient.put(tempUUID,senderReference);
@@ -101,20 +99,17 @@ public class CoordinatorReceive {
                          }
                      }
                  }else{
-                     System.out.println("CoordinatorReceive Prüfen Nachrichten typ kein CheckAvailability");
                      if (participants.stream().anyMatch(participantRef -> participantRef.getAddress().equals(receiveDP.getAddress()) && participantRef.getPort() == receiveDP.getPort())) {//Nachricht von Partizipanten
-                         System.out.println("CoordinatorReceive Prüfen Nachrichten typ kein CheckAvailability von Partizipant");
+                         System.out.println("CoordinatorReceive Nachricht vom Partizipanten erhalten");
                          //ändere von uuid in coordinator list auf den zustand des partizipanten das thread ausführen kann
 
                          UUID tempUUID = UUID.fromString(new String(receiveDP.getData(), 0, receiveDP.getLength()).split(" ")[0]); // get UUID from message Structure -> UUID Command Content etc.
-                         System.out.println(tempUUID);
                          while (this.monitorDataCoCoThread.getTransaction(tempUUID).getDatagramPacket() != null) {
                              //warte bis Paket von Thread entnommen wurde
                          }
-                         System.out.println("CoordinatorReceive Prüfen Nachrichten typ kein CheckAvailability von Partizipant Paket abgelegt");
                          this.monitorDataCoCoThread.getTransaction(tempUUID).setDatagramPacket(receiveDP);
-                     } else {//Nachricht von working2pc.Client
-                         System.out.println("CoordinatorReceive Prüfen Nachrichten typ kein CheckAvailability von working2pc.Client");
+                     } else {//Nachricht von Client
+                         System.out.println("CoordinatorReceive Buchungsanfrage vom Client erhalten");
                          String[] receivedMSG = new String(receiveDP.getData(), 0, receiveDP.getLength()).split(" ");//nachricht wird geteilt
                          TransactionCoordinator transaction = new TransactionCoordinator(new SenderReference(receiveDP.getPort(), receiveDP.getAddress()), Integer.parseInt(receivedMSG[0]), Integer.parseInt(receivedMSG[1]), receivedMSG[2], receivedMSG[3]);//erstellung einer neuen Koordinator Transaktion
                          UUID tempUUID = transaction.getUUID();
@@ -122,7 +117,7 @@ public class CoordinatorReceive {
                          this.monitorDataCoCoThread.getTransaction(tempUUID).setDatagramPacket(receiveDP);//festlegen des Datagrampackets
                          Thread coordinatorThread = new CoordinatorThread(tempUUID, this.monitorDataCoCoThread, this.writeLogFileMonitor, this.participants, socket);//erstellen eines koordinatorenthreads für die erstellte Transaktion
                          coordinatorThread.start(); //ausführen des 2PC Protokolls
-                         System.out.println("CoordinatorReceive Prüfen Nachrichten typ kein CheckAvailability von working2pc.Client starten einer neuen Transaktion");
+                         System.out.println("CoordinatorReceive CoordinatorThread wurde gestartet");
                      }
                  }
             }

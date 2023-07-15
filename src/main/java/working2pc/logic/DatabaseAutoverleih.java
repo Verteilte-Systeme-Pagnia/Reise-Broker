@@ -8,12 +8,14 @@ public class DatabaseAutoverleih {
     private Semaphore semaphore = new Semaphore(1,true);
     public DatabaseAutoverleih() {
         try {
+            //stellt die Verbindung zu der MySQL Datenbank her
             this.connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/autoverleih", "root", "pass");
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
+    //gibt die Anzahl an freien Autos für den ausgewählten Zeitraum zurück
     public int getFreeCars(String startDate, String endDate) {
         try {
             semaphore.acquire();
@@ -22,8 +24,6 @@ public class DatabaseAutoverleih {
                 String sql = "SELECT COUNT(*) FROM autos WHERE " + "reserved = 0 AND" +
                         " id NOT IN (SELECT carId FROM buchungen WHERE (startDatum >= " + "'" + startDate + "'" + " AND startDatum <=  " + "'" + endDate + "'" + ") OR (" +
                         " endDatum >= " + "'" + startDate + "'" + " AND endDatum <= " + "'" + endDate + "'" + ") )";
-                System.out.println(sql);
-
                 PreparedStatement ps = this.connection.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery();
                 rs.next();
@@ -39,6 +39,7 @@ public class DatabaseAutoverleih {
         return -1;
     }
 
+    //gibt die Anzahl an reservierten Autos der dementsprechenden Transaktion zurück
     public int getReservedCars(String transactionId) {
         try {
             String sql = "SELECT COUNT(*) FROM autos WHERE reserved = 1 AND transactionId = " + "'" + transactionId + "'";
@@ -51,7 +52,7 @@ public class DatabaseAutoverleih {
             }
         return -1;
     }
-
+    //reserviert die gewünschte Anzahl an Autos für den ausgewählten Zeitraum
     public boolean reserveCar( int number, String startDate, String endDate,String transactionId){
         try {
             semaphore.acquire();
@@ -61,6 +62,7 @@ public class DatabaseAutoverleih {
                         " endDatum >= " + "'" + startDate + "'" + " AND endDatum <= " + "'" + endDate + "'" + ") ) LIMIT " + number;
                 PreparedStatement ps = this.connection.prepareStatement(sql);
                 int affectedRows = ps.executeUpdate();
+                //wenn nicht genügend Autos reserviert werden konnten, werden alle Reservierungen rückgängig gemacht
                 if (affectedRows != number) {
                     cancelReservation(transactionId);
                     return false;
@@ -76,6 +78,7 @@ public class DatabaseAutoverleih {
         return true;
     }
 
+    //stoniert alle Reservierungen der Transaktion
     public boolean cancelReservation(String transactionId) {
             try {
                 String sql = "UPDATE autos SET reserved = 0 WHERE reserved = 1 AND transactionId = " + "'" + transactionId + "'";
@@ -89,6 +92,7 @@ public class DatabaseAutoverleih {
         return false;
     }
 
+    //bucht die reservierten Autos der Transaktion für den ausgewählten Zeitraum
     public boolean bookReservedCars(String startDate, String endDate, String transactionId){
         try {
             semaphore.acquire();
@@ -119,6 +123,7 @@ public class DatabaseAutoverleih {
         return false;
     }
 
+    //löscht Buchungen, die in der Vergangenheit liegen und somit nicht mehr von Relevanz sind
     public boolean checkOutdatedBookings(){
 
             try {

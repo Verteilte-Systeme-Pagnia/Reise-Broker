@@ -21,7 +21,7 @@ public class Client {
         }
     }
     public String[] checkAvailability(String dateFrom, String dateTo){
-        randomInt = random.nextInt(1);
+        randomInt = random.nextInt(2);
         String hotelResponse;
         String carResponse;
         try{
@@ -50,7 +50,7 @@ public class Client {
     }
 
     public String book(String dateFrom, String dateTo, int nRooms, int nCars){
-        randomInt = random.nextInt(1);
+        randomInt = random.nextInt(2);
         String response;
         try {
             byte[] msg = (nRooms + " " + nCars + " " + dateFrom + " " + dateTo + " Booked").getBytes();

@@ -39,7 +39,7 @@ public class ParticipantHelperThread extends Thread{//wird von Participant Recei
                     }
                     DatagramPacket datagramPacketSend = new DatagramPacket(lastRecordedState.getBytes(), 0, lastRecordedState.getBytes().length, tempDatagrampacket.getAddress(), tempDatagrampacket.getPort());
                     socket.send(datagramPacketSend);
-                    System.out.println("PartizipantHelperThread Nachricht wurde gesendet: "+lastRecordedState);
+                    System.out.println("ParticipantHelperThread Nachricht wurde gesendet: "+lastRecordedState);
                 }catch (IOException e) {
                     throw new RuntimeException(e);
                 }
