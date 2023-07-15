@@ -10,8 +10,11 @@ public class UIController {
     private Client client;
     private final Object[] shoppingCart = new Object[4];
     private JFrame frame;
+    //Teilbereich des UIs für die Eingabe der Daten
     DateSection dateSection;
+    //Teilbereich des UIs für die Eingabe der Anzahl
     AmountSection amountSection;
+    //Teilbereich des UIs für die Knöpfe
     ButtonSection buttonSection;
 
     private static class DateSection extends JPanel {
@@ -133,6 +136,7 @@ public class UIController {
         initialize();
     }
 
+    //Initialisieren der einzelnen Komponenten des UIs
     private void initialize() {
         client = new Client();
         frame = new JFrame();
@@ -152,6 +156,8 @@ public class UIController {
         contentPane.add(buttonSection);
     }
 
+
+    //Validieren der eingegebenen Daten
     private boolean validateDates(String dateFrom, String dateTo){
         if(!validateDate(dateFrom) || !validateDate(dateTo)){
             return false;
@@ -164,17 +170,25 @@ public class UIController {
         return true;
     }
 
+    //Validieren eines Datums, wird von der validateDates genutzt
     private boolean validateDate(String date){
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         dateFormat.setLenient(false);
         try {
             dateFormat.parse(date);
-            return true;
         } catch (ParseException e) {
             return false;
         }
+        LocalDate currentDate = LocalDate.now();
+        LocalDate inputDate = LocalDate.parse(date);
+        if(inputDate.isBefore(currentDate)){
+            return false;
+        }
+        return true;
     }
 
+    //Reservieren der gewünschten Zimmer und Autos. Reservierung wird nicht auf der Datenbank persistiert,
+    //sondern nur im Client gespeichert
     private void reserve(String dateFrom, String dateTo, int nRooms, int nCars) {
         String[] databaseResponse = client.checkAvailability(dateFrom, dateTo);
         int availableHotelRooms = parseAvailabilityResponse(databaseResponse[0]);
@@ -193,11 +207,14 @@ public class UIController {
         }
     }
 
+    //Verarbeiten der Response aus dem Client
     private int parseAvailabilityResponse(String response){
         String[] responseSplit = response.split(" ");
         return Integer.parseInt(responseSplit[responseSplit.length - 1]);
     }
 
+    //Buchen der reservierten Zimmer und Autos. Buchungsdaten werden aus dem lokalen shoppingCart geladen und
+    //Buchung wird auf der Datenbank persistiert
     private void book() {
         String response = client.book(
                 (String)shoppingCart[0],
@@ -219,6 +236,7 @@ public class UIController {
         frame.setVisible(true);
     }
 
+    //Starten des UIControllers
     public static void main(String[] args) {
         UIController ui = new UIController();
         ui.show();
