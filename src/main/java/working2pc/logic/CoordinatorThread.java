@@ -128,7 +128,9 @@ public class CoordinatorThread extends Thread{
     private void sendGlobalCommit(){ //Methode für den COMMIT Zustand des CoordinatorThreads
         this.participantsAllThreadUse.stream()
             .forEach(participantRef -> {sendMsgParticipant(this.uuid.toString() + " GLOBAL_COMMIT",participantRef); //Im COMMIT wird ein GLOBAL_COMMIT an alle Partizipanten geschickt
+
                 //System.exit(0); //fehlerfall3: Koordinator fällt aus
+
             });
         System.out.println("CoordinatorThread "+uuid+ " Sendet GLOBAL_COMMIT an alle Partizipanten");                           
 

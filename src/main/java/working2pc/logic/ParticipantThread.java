@@ -98,6 +98,10 @@ public class ParticipantThread extends Thread {
                 if ("VOTE_REQUEST".equals(msg[1])) { //falls die Nachricht ein VOTE_REQUEST, geht der Thread aus der Schleife raus
                     vote_request = true;
                     System.out.println("ParticipantThread: " + uuid + " VOTE_REQUEST erhalten");
+
+                    //if(type.equals("Hotel")){
+                    //   System.exit(0); //fehlerfall1: Partizipant fällt in der 1. Phase aus
+                    //}
                 }
             }
         }
@@ -124,6 +128,10 @@ public class ParticipantThread extends Thread {
     private void stateReady() { //Methode für den Zustand READY des ParticipantThreads
         sendMsgCoordinator(" VOTE_COMMIT"); //sendet VOTE_COMMIT an den Koordinator
         System.out.println("ParticipantThread: " + uuid + " VOTE_COMMIT gesendet");
+
+        //if(type.equals("Hotel")){
+        //     System.exit(0); //fehlerfall2: Partizipant fällt in der 2. Phase aus
+        //}
 
         long startTime = System.nanoTime();
         long endTime = startTime + (15 * 1000000000L);

@@ -6,8 +6,9 @@ fehlerfall1: Eine andauernde Netzpartitionierung während der ersten Phase, die 
              Fällt ein Teilnehmer in der ersten Phase aus, so antwortet er nicht. Der Koordinator wertet dies als ABORT
              und entscheidet ABORT.
 
-             Änderung: fehlerfall1.logic.participantThread line: 82-86
-             Der Hotel Partizipant bleibt an der while(true) Schleife hängen und sendet nie eine Nachricht an den
+             Änderung: working2pc.logic.ParticipantThread line: 102-104
+
+             Der Hotel Partizipant fällt aus, nachdem er das VOTE_REQUEST erhalten hat und sendet nie eine Nachricht an den
              Koordinator. Dieser wartet bis zum timeout und wechselt dann ins ABORT und sendet ein GLOBAL_ABORT.
              In unserer Implementierung wartet er auf ein ACK von allen Partizipanten und sendet nach timeouts
              immer wieder das GLOBAL_ABORT. Das ist so implementiert, da der Hotel Partizipant bei einem Wiederaufwachen
@@ -19,8 +20,17 @@ fehlerfall2: Fällt ein Teilnehmer in der zweiten Phase aus, so bekommt er die E
              nicht abgeschlossen wurde. Nach dem Booten bekommt der Teilnehmer vom Koordinator den Ausgang der
              Transaktion nachdem die verlorengegangene Nachricht mittels Timeouts erkannt wurde und nochmals gesendet wurde.
 
+             Änderung: working2pc.logic.ParticipantThread line: 132-134
+
+             Der Hotel Partizipant fällt aus nach, nachdem er ein VOTE_COMMIT gesendet hat. Er bekommt die Entscheidung des
+             Koordinators also nicht mit. Der Koordinator sendet aber nach timeouts immer wieder ein GLOBAL_COMMIT, da er
+             noch kein ACK vom Hotel Partizipanten erhalten hat. Nach dem Booten bekommt er dann die Entscheidung des
+             Koordinators dadurch mit und kann das Protokoll korrekt zu Ende führen.
+
 fehlerfall3: Fällt der Koordinator aus, nachdem er die Entscheidung getroffen und diese im Log-File notiert hat, oder
              kommt es zu diesem Zeitpunkt zu einer Netzpartitionierung, so kann das Protokoll erst nach dem Reboot
              des Koordinators fortgesetzt werden. Das Protokoll ist solange blockiert.
              Kennt einer der Teilnehmer die Entscheidung des Koordinators bereits, kann er diese auf Nachfrage an die
              anderen Teilnehmer weiterleiten.
+
+             Änderung: working2pc.logic.CoordinatorThread line: 132
