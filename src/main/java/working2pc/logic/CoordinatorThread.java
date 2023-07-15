@@ -11,7 +11,7 @@ import java.net.DatagramSocket;
 import java.util.ArrayList;
 import java.util.UUID;
 
-import static working2pc.logic.transaction.states_coordinator.Finish;
+import static working2pc.logic.transaction.states_coordinator.FINISH;
 
 public class CoordinatorThread extends Thread{
     private MonitorDataCoCoThread monitorDataCoCoThread;
@@ -39,7 +39,7 @@ public class CoordinatorThread extends Thread{
     } //die initialize Methode wird bei jedem Thread aufgerufen
 
     private void initialize() { //In der Methode wird geschaut, welchen Zustand der CoordinatorThread zurzeit hat und dementsprechend verschiedene Methoden ausgeführt
-        while (this.monitorDataCoCoThread.getTransaction(uuid).getStateC() != Finish)
+        while (this.monitorDataCoCoThread.getTransaction(uuid).getStateC() != FINISH)
         { //wenn der Thread noch nicht fertig ist läuft die Abfrage, welchen Zustand der CoordinatorThread zurzeit hat
             switch (this.monitorDataCoCoThread.getTransaction(uuid).getStateC()) { //Abfrage des Zustands des CoordinatorThreads über den Monitor
                 case INIT:
@@ -59,10 +59,10 @@ public class CoordinatorThread extends Thread{
                 case SENDCLIENT:
                     sendClientMessage();
                     break;
-                case Finish:
+                case FINISH:
             }
         }
-        if(this.monitorDataCoCoThread.getTransaction(this.uuid) != null){//Rm Transaction when finished
+        if(this.monitorDataCoCoThread.getTransaction(this.uuid) != null){//Rm Transaction when FINISHed
             this.monitorDataCoCoThread.rmTranscaction(this.uuid);
         }
     }
@@ -181,7 +181,7 @@ public class CoordinatorThread extends Thread{
         System.out.println("CoordinatorThread "+this.uuid+" habe alle ACK erhalten");
 
         monitorDataCoCoThread.setTransactionStatus(this.uuid, states_coordinator.SENDCLIENT); //wenn alle Partizipanten ein ACK gesendet haben, wird der Zustand des Koordinators auf SENDCLIENT gesetzt
-        System.out.println("CoordinatorThread "+this.uuid+" Status auf SendCleint gesetzt");
+        System.out.println("CoordinatorThread "+this.uuid+" Status auf SENDCLIENT gesetzt");
 
         monitorDataCoCoThread.getTransaction(uuid).finalResult = String.valueOf(finalSendCommit);
         writeLogFileMonitor.writeToFileFinalResult(monitorDataCoCoThread.getTransaction(this.uuid), String.valueOf(finalSendCommit)); //Zusätzliche Notation des letzten Zustandes in der Log-File, um beim Absturz zu wissen, ob man im COMMIT oder ABORT war
@@ -196,9 +196,9 @@ public class CoordinatorThread extends Thread{
         try{
             DatagramPacket dp = new DatagramPacket(tempSendData, tempSendData.length, this.monitorDataCoCoThread.getTransaction(uuid).senderReference.getSenderAddress(), this.monitorDataCoCoThread.getTransaction(uuid).senderReference.getSenderPort());
             socket.send(dp);
-            System.out.println("CoordinatorThread "+this.uuid+" Nachricht an working2pc.Client gesendet");
+            System.out.println("CoordinatorThread "+this.uuid+" Nachricht an Client gesendet");
 
-            this.monitorDataCoCoThread.setTransactionStatus(uuid, Finish); //Zustand des Koordinators wird auf FINISH gesetzt
+            this.monitorDataCoCoThread.setTransactionStatus(uuid, FINISH); //Zustand des Koordinators wird auf FINISH gesetzt
             System.out.println("CoordinatorThread "+this.uuid+" Status auf FINISH gesetzt");
             this.writeLogFileMonitor.writeToFile(monitorDataCoCoThread.getTransaction(this.uuid),dp);
         }catch (IOException e) {

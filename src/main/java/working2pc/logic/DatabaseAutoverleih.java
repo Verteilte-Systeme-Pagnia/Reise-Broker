@@ -24,8 +24,6 @@ public class DatabaseAutoverleih {
                 String sql = "SELECT COUNT(*) FROM autos WHERE " + "reserved = 0 AND" +
                         " id NOT IN (SELECT carId FROM buchungen WHERE (startDatum >= " + "'" + startDate + "'" + " AND startDatum <=  " + "'" + endDate + "'" + ") OR (" +
                         " endDatum >= " + "'" + startDate + "'" + " AND endDatum <= " + "'" + endDate + "'" + ") )";
-                System.out.println(sql);
-
                 PreparedStatement ps = this.connection.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery();
                 rs.next();
